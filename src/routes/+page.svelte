@@ -42,7 +42,8 @@
 
 	// guests use this device; signed-in users use their account copy
 	async function storage(): Promise<Storage> {
-		const { data } = await auth.getSession();
+		// auth unreachable: carry on as a guest
+		const { data } = await auth.getSession().catch(() => ({ data: null }));
 		if (!data?.user) return localStorage;
 		user = data.user;
 		const push = (d: unknown) =>
@@ -170,7 +171,10 @@
 							{q ? time.format(q.time) : ''}
 						</span>
 					</div>
-					<div class="px">{q ? fmt.format(q.price) : missing[s] ? 'N/A' : '—'}</div>
+					<div class="px">
+						{#if q}{fmt.format(q.price)}{:else if missing[s]}N/A{:else}<span class="sk sk-px"
+							></span>{/if}
+					</div>
 					<div class="ch">
 						{#if q}
 							{dir > 0 ? '▲' : dir < 0 ? '▼' : ''}
@@ -200,6 +204,13 @@
 		</section>
 	{:else if watchlist}
 		<p class="empty">No stocks yet. Search above to add one.</p>
+	{:else}
+		<div class="loading" aria-busy="true" aria-label="Loading portfolio">
+			<div class="sk sk-strip"></div>
+			<div class="board">
+				{#each { length: 3 }, i (i)}<div class="sk sk-box"></div>{/each}
+			</div>
+		</div>
 	{/if}
 
 	{#if portfolio?.trades.length}
@@ -392,6 +403,38 @@
 	}
 	.x:focus-visible {
 		outline: 2px solid var(--text);
+	}
+	.loading {
+		margin-top: 0.75rem;
+	}
+	.sk {
+		border-radius: 8px;
+		background: linear-gradient(90deg, var(--card) 30%, #1d1d1d 50%, var(--card) 70%) 0 0 / 300%
+			100%;
+		animation: shimmer 1.4s linear infinite;
+	}
+	@keyframes shimmer {
+		to {
+			background-position: -150% 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sk {
+			animation: none;
+		}
+	}
+	.sk-strip {
+		height: 5.5rem;
+		border-radius: 10px;
+	}
+	.sk-box {
+		height: 12rem;
+	}
+	.sk-px {
+		display: block;
+		width: 60%;
+		height: 0.8em;
+		margin: 0.15em 0;
 	}
 	.empty {
 		margin-top: 3rem;
