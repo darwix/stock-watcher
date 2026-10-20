@@ -11,6 +11,8 @@
 	let quotes = $state<Record<string, Quote>>({});
 	let stale = $state<Record<string, boolean>>({});
 	let missing = $state<Record<string, boolean>>({});
+	// price before the latest update, to flash the box when it moves
+	let prev = $state<Record<string, number>>({});
 	let open = $state(isMarketOpen());
 
 	async function refresh(symbols = watchlist?.symbols ?? []) {
@@ -27,6 +29,7 @@
 		for (const [s, r] of Object.entries(data)) {
 			if (r && 'error' in r) stale[s] = true;
 			else if (r) {
+				if (quotes[s]) prev[s] = quotes[s].price;
 				quotes[s] = r;
 				stale[s] = false;
 			} else missing[s] = true;
@@ -59,160 +62,210 @@
 
 <main>
 	<header>
-		<h1>IDX Watchlist</h1>
+		<h1>IDX watchlist</h1>
 		<span class="badge" class:live={open}>{open ? '● Live · 15s' : 'Market closed'}</span>
 	</header>
 
 	<StockSearch onpick={add} />
 
 	{#if watchlist?.symbols.length}
-		<table>
-			<thead>
-				<tr
-					><th>Stock</th><th class="num">Price</th><th class="num">Change</th><th>Updated</th><th
-					></th></tr
-				>
-			</thead>
-			<tbody>
-				{#each watchlist.symbols as s (s)}
-					{@const q = quotes[s]}
-					{@const dir = q ? Math.sign(q.change) : 0}
-					<tr>
-						<td>
-							<b>{s.replace('.JK', '')}</b>
-							<div class="muted">{q?.name ?? (missing[s] ? 'Not found' : '…')}</div>
-						</td>
-						<td class="num">{q ? fmt.format(q.price) : '—'}</td>
-						<td class="num" class:up={dir > 0} class:down={dir < 0}>
+		<section class="board" aria-label="Watchlist">
+			{#each watchlist.symbols as s (s)}
+				{@const q = quotes[s]}
+				{@const dir = q ? Math.sign(q.change) : 0}
+				{#key q?.price}
+					<article
+						class="box"
+						class:up={dir > 0}
+						class:down={dir < 0}
+						class:flash={q && prev[s] !== undefined && prev[s] !== q.price}
+						title={q?.name}
+					>
+						<div class="row">
+							<span class="tk">{s.replace('.JK', '')}</span>
+							<span>
+								{#if stale[s]}<span class="stale">stale</span>{/if}
+								{q ? time.format(q.time) : ''}
+							</span>
+						</div>
+						<div class="px">{q ? fmt.format(q.price) : missing[s] ? 'N/A' : '—'}</div>
+						<div class="ch">
 							{#if q}
-								{dir > 0 ? '+' : ''}{fmt.format(q.change)} ({q.changePercent.toFixed(2)}%)
+								{dir > 0 ? '▲' : dir < 0 ? '▼' : ''}
+								{dir > 0 ? '+' : ''}{fmt.format(q.change)} ({dir > 0
+									? '+'
+									: ''}{q.changePercent.toFixed(2)}%)
+							{:else if missing[s]}
+								Not found on IDX
 							{/if}
-						</td>
-						<td class="muted">
-							{q ? time.format(q.time) : ''}
-							{#if stale[s]}<span class="stale">stale</span>{/if}
-						</td>
-						<td>
-							<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}
-								>×</button
-							>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+						</div>
+						<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button
+						>
+					</article>
+				{/key}
+			{/each}
+		</section>
 	{:else if watchlist}
-		<p class="muted empty">No stocks yet. Search above to add one.</p>
+		<p class="empty">No stocks yet. Search above to add one.</p>
 	{/if}
 </main>
 
 <style>
 	:global(:root) {
-		--bg: #f7f7f8;
-		--card: #fff;
-		--text: #111;
-		--muted: #6b7280;
-		--line: #e5e7eb;
-		--up: #15803d;
-		--down: #b91c1c;
-	}
-	@media (prefers-color-scheme: dark) {
-		:global(:root) {
-			--bg: #0f1115;
-			--card: #181b21;
-			--text: #e5e7eb;
-			--muted: #9ca3af;
-			--line: #2a2e36;
-			--up: #4ade80;
-			--down: #f87171;
-		}
+		--bg: #0e0f11;
+		--board: #0b0c0d;
+		--card: #131517;
+		--text: #d9d6cf;
+		--muted: #7d7a74;
+		--line: #272a2f;
+		--up: #5bd68f;
+		--down: #ff7a63;
+		color-scheme: dark;
 	}
 	:global(body) {
 		margin: 0;
 		background: var(--bg);
 		color: var(--text);
-		font-family: system-ui, sans-serif;
+		font-family: Geist, system-ui, sans-serif;
 	}
 	:global(.muted) {
 		color: var(--muted);
 		font-size: 0.85em;
 	}
 	main {
-		max-width: 760px;
+		max-width: 1200px;
 		margin: 0 auto;
-		padding: 1.5rem 1rem;
+		padding: 2rem 1rem 4rem;
 	}
 	header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1rem;
+		margin-bottom: 1.25rem;
 	}
 	h1 {
-		font-size: 1.4rem;
 		margin: 0;
+		font-size: 1.6rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		color: #ecebe8;
 	}
 	.badge {
-		font-size: 0.8rem;
-		padding: 0.2rem 0.6rem;
-		border-radius: 999px;
-		background: var(--line);
+		font:
+			500 0.8rem 'Geist Mono',
+			monospace;
+		padding: 0.25rem 0.7rem;
+		border-radius: 6px;
+		background: var(--card);
+		color: var(--muted);
 	}
 	.badge.live {
 		color: var(--up);
 	}
-	table {
-		width: 100%;
+	.board {
 		margin-top: 1rem;
-		border-collapse: collapse;
+		background: var(--board);
+		border-radius: 14px;
+		padding: 6px;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 6px;
+	}
+	.box {
+		position: relative;
 		background: var(--card);
 		border-radius: 8px;
-		overflow: hidden;
-	}
-	th,
-	td {
-		padding: 0.6rem 0.8rem;
-		border-bottom: 1px solid var(--line);
-		text-align: left;
-	}
-	th {
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		color: var(--muted);
-	}
-	.num {
-		text-align: right;
+		padding: 1rem 1.1rem;
+		font-family: 'Geist Mono', ui-monospace, monospace;
 		font-variant-numeric: tabular-nums;
-		white-space: nowrap;
 	}
-	.up {
+	.row {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.8rem;
+		color: var(--muted);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.tk {
+		color: var(--text);
+		font-weight: 600;
+	}
+	.px {
+		font-size: clamp(2.8rem, 7vw, 4rem);
+		font-weight: 500;
+		letter-spacing: -0.04em;
+		line-height: 1.1;
+		margin: 0.6rem 0 0.2rem;
+	}
+	.ch {
+		font-size: 0.95rem;
+		min-height: 1.4em;
+	}
+	.up :is(.px, .ch) {
 		color: var(--up);
 	}
-	.down {
+	.down :is(.px, .ch) {
 		color: var(--down);
 	}
+	@keyframes flash-up {
+		from {
+			background: #5bd68f33;
+		}
+	}
+	@keyframes flash-down {
+		from {
+			background: #ff7a6333;
+		}
+	}
+	.flash.up {
+		animation: flash-up 1.2s ease-out;
+	}
+	.flash.down {
+		animation: flash-down 1.2s ease-out;
+	}
 	.stale {
-		margin-left: 0.4rem;
+		margin-right: 0.5rem;
 		padding: 0 0.4rem;
 		border-radius: 4px;
-		background: #f59e0b33;
-		color: #b45309;
+		background: #f59e0b26;
+		color: #f5b04b;
 	}
 	.x {
+		position: absolute;
+		right: 0.6rem;
+		bottom: 0.6rem;
+		width: 28px;
+		height: 28px;
 		border: 0;
+		border-radius: 6px;
 		background: none;
 		color: var(--muted);
-		font-size: 1.2rem;
+		font-size: 1.1rem;
 		cursor: pointer;
+		opacity: 0;
+		transition:
+			opacity 0.2s,
+			background 0.2s;
+	}
+	.box:hover .x,
+	.x:focus-visible {
+		opacity: 1;
+	}
+	.x:hover {
+		background: #fff1;
+	}
+	.x:focus-visible {
+		outline: 2px solid var(--text);
 	}
 	.empty {
-		margin-top: 2rem;
+		margin-top: 3rem;
 		text-align: center;
+		color: var(--muted);
 	}
-	@media (max-width: 520px) {
-		th:nth-child(4),
-		td:nth-child(4) {
-			display: none;
+	@media (hover: none) {
+		.x {
+			opacity: 1;
 		}
 	}
 </style>
