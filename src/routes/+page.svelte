@@ -73,8 +73,6 @@
 	});
 </script>
 
-<svelte:head><title>IDX Watchlist</title></svelte:head>
-
 <main>
 	<header>
 		<h1>IDX watchlist</h1>
