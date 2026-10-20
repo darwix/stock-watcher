@@ -12,3 +12,8 @@ export type SearchResult = { symbol: string; name: string };
 
 /** null = unknown symbol, { error } = upstream failed this round */
 export type QuoteResult = Quote | null | { error: true };
+
+export type Position = { price: number; lot: number };
+
+/** percent, e.g. 0.15 = 0.15% */
+export type Fees = { buy: number; sell: number };

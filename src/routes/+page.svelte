@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import StockSearch from '#lib/components/StockSearch.svelte';
+	import PositionEditor from '#lib/components/PositionEditor.svelte';
+	import PortfolioSummary from '#lib/components/PortfolioSummary.svelte';
 	import { Watchlist } from '#lib/stores/watchlist.svelte.ts';
+	import { Portfolio } from '#lib/stores/portfolio.svelte.ts';
+	import { calcPosition } from '#lib/utils/position.ts';
 	import { isMarketOpen } from '#lib/utils/market.ts';
 	import type { Quote, QuoteResult } from '#lib/models/stock.ts';
 
 	const REFRESH_MS = 15_000;
 
 	let watchlist = $state<Watchlist>();
+	let portfolio = $state<Portfolio>();
 	let quotes = $state<Record<string, Quote>>({});
 	let stale = $state<Record<string, boolean>>({});
 	let missing = $state<Record<string, boolean>>({});
@@ -43,12 +48,22 @@
 
 	onMount(() => {
 		watchlist = new Watchlist(localStorage);
+		portfolio = new Portfolio(localStorage);
 		refresh();
 		const id = setInterval(() => {
 			open = isMarketOpen();
 			if (open) refresh();
 		}, REFRESH_MS);
 		return () => clearInterval(id);
+	});
+
+	// positions on watched stocks that have a live price
+	const held = $derived.by(() => {
+		if (!portfolio || !watchlist) return [];
+		const { positions, fees } = portfolio;
+		return watchlist.symbols
+			.filter((s) => positions[s] && quotes[s])
+			.map((s) => calcPosition(positions[s], quotes[s].price, fees));
 	});
 
 	const fmt = new Intl.NumberFormat('id-ID');
@@ -68,41 +83,53 @@
 
 	<StockSearch onpick={add} />
 
+	{#if portfolio && held.length}
+		<PortfolioSummary items={held} fees={portfolio.fees} onfees={(f) => portfolio?.setFees(f)} />
+	{/if}
+
 	{#if watchlist?.symbols.length}
 		<section class="board" aria-label="Watchlist">
 			{#each watchlist.symbols as s (s)}
 				{@const q = quotes[s]}
 				{@const dir = q ? Math.sign(q.change) : 0}
-				{#key q?.price}
-					<article
-						class="box"
-						class:up={dir > 0}
-						class:down={dir < 0}
-						class:flash={q && prev[s] !== undefined && prev[s] !== q.price}
-						title={q?.name}
-					>
-						<div class="row">
-							<span class="tk">{s.replace('.JK', '')}</span>
-							<span>
-								{#if stale[s]}<span class="stale">stale</span>{/if}
-								{q ? time.format(q.time) : ''}
-							</span>
-						</div>
-						<div class="px">{q ? fmt.format(q.price) : missing[s] ? 'N/A' : '—'}</div>
-						<div class="ch">
-							{#if q}
-								{dir > 0 ? '▲' : dir < 0 ? '▼' : ''}
-								{dir > 0 ? '+' : ''}{fmt.format(q.change)} ({dir > 0
-									? '+'
-									: ''}{q.changePercent.toFixed(2)}%)
-							{:else if missing[s]}
-								Not found on IDX
-							{/if}
-						</div>
-						<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button
-						>
-					</article>
-				{/key}
+				<article class="box" class:up={dir > 0} class:down={dir < 0} title={q?.name}>
+					<!-- only this layer remounts on a new price, so an open position form survives -->
+					{#key q?.price}
+						<div
+							class="flash"
+							class:on={q && prev[s] !== undefined && prev[s] !== q.price}
+							aria-hidden="true"
+						></div>
+					{/key}
+					<div class="row">
+						<span class="tk">{s.replace('.JK', '')}</span>
+						<span>
+							{#if stale[s]}<span class="stale">stale</span>{/if}
+							{q ? time.format(q.time) : ''}
+						</span>
+					</div>
+					<div class="px">{q ? fmt.format(q.price) : missing[s] ? 'N/A' : '—'}</div>
+					<div class="ch">
+						{#if q}
+							{dir > 0 ? '▲' : dir < 0 ? '▼' : ''}
+							{dir > 0 ? '+' : ''}{fmt.format(q.change)} ({dir > 0
+								? '+'
+								: ''}{q.changePercent.toFixed(2)}%)
+						{:else if missing[s]}
+							Not found on IDX
+						{/if}
+					</div>
+					{#if portfolio && !missing[s]}
+						<PositionEditor
+							symbol={s}
+							live={q?.price}
+							pos={portfolio.positions[s]}
+							fees={portfolio.fees}
+							onsave={(pos) => portfolio?.setPosition(s, pos)}
+						/>
+					{/if}
+					<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button>
+				</article>
 			{/each}
 		</section>
 	{:else if watchlist}
@@ -178,8 +205,10 @@
 		padding: 1rem 1.1rem;
 		font-family: 'Geist Mono', ui-monospace, monospace;
 		font-variant-numeric: tabular-nums;
+		isolation: isolate;
 	}
 	.row {
+		padding-right: 2rem;
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.8rem;
@@ -218,10 +247,17 @@
 			background: #ff7a6333;
 		}
 	}
-	.flash.up {
+	.flash {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: inherit;
+		pointer-events: none;
+	}
+	.up .flash.on {
 		animation: flash-up 1.2s ease-out;
 	}
-	.flash.down {
+	.down .flash.on {
 		animation: flash-down 1.2s ease-out;
 	}
 	.stale {
@@ -233,8 +269,8 @@
 	}
 	.x {
 		position: absolute;
+		top: 0.55rem;
 		right: 0.6rem;
-		bottom: 0.6rem;
 		width: 28px;
 		height: 28px;
 		border: 0;
