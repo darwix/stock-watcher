@@ -72,6 +72,13 @@ describe('Portfolio', () => {
 		]);
 	});
 
+	it('persists profit goal, 0 = none', () => {
+		const storage = memoryStorage();
+		expect(new Portfolio(storage).goal).toBe(0);
+		new Portfolio(storage).setGoal(5_000_000);
+		expect(new Portfolio(storage).goal).toBe(5_000_000);
+	});
+
 	it('survives corrupt or missing storage', () => {
 		const p = new Portfolio(memoryStorage({ portfolio: '{oops' }));
 		expect(p.trades).toEqual([]);
