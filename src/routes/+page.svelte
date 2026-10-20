@@ -62,7 +62,10 @@
 	// open holdings on watched stocks that have a live price
 	const held = $derived.by(() => {
 		if (!portfolio || !watchlist) return [];
-		const { holdings, fees } = portfolio;
+		const {
+			book: { holdings },
+			fees
+		} = portfolio;
 		return watchlist.symbols
 			.filter((s) => holdings[s]?.lot && quotes[s])
 			.map((s) => calcPosition(holdings[s], quotes[s].price, fees.sell));
@@ -84,8 +87,8 @@
 
 	{#if portfolio?.trades.length}
 		<PortfolioSummary
-			items={held}
-			realized={portfolio.realized}
+			unrealized={held.reduce((a, c) => a + c.pl, 0)}
+			realized={portfolio.book.realized}
 			fees={portfolio.fees}
 			onfees={(f) => portfolio?.setFees(f)}
 		/>
@@ -127,7 +130,7 @@
 						<PositionEditor
 							symbol={s}
 							live={q?.price}
-							holding={portfolio.holdings[s]}
+							holding={portfolio.book.holdings[s]}
 							fees={portfolio.fees}
 							onadd={(t) => portfolio?.addTrade(t)}
 						/>
@@ -143,7 +146,7 @@
 	{#if portfolio?.trades.length}
 		<TradeHistory
 			trades={portfolio.trades}
-			realizedById={portfolio.realizedById}
+			realizedById={portfolio.book.realizedById}
 			onupdate={(id, t) => portfolio?.updateTrade(id, t)}
 			onremove={(id) => portfolio?.removeTrade(id)}
 		/>

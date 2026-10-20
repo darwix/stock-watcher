@@ -14,7 +14,7 @@ type Saved = {
 export class Portfolio {
 	trades = $state<Trade[]>([]);
 	fees = $state<Fees>({ buy: 0.15, sell: 0.25 });
-	#ledger = $derived(ledger(this.trades));
+	book = $derived(ledger(this.trades));
 
 	constructor(private storage: Storage | undefined) {
 		const saved = load(storage, KEY) as Saved | undefined;
@@ -32,16 +32,6 @@ export class Portfolio {
 				fee: this.fees.buy
 			}));
 		}
-	}
-
-	get holdings() {
-		return this.#ledger.holdings;
-	}
-	get realized() {
-		return this.#ledger.realized;
-	}
-	get realizedById() {
-		return this.#ledger.realizedById;
 	}
 
 	/** error message, or undefined on success */

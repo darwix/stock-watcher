@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ceilTick, calcPosition, sumPositions, ledger } from './position';
+import { ceilTick, calcPosition, ledger } from './position';
 import type { Trade } from '#lib/models/stock.ts';
 
 let id = 0;
@@ -49,16 +49,6 @@ describe('calcPosition', () => {
 		const c = calcPosition({ lot: 1, cost: 100_150 }, 1000, 0.25);
 		expect(c.pl).toBeLessThan(0);
 		expect(c.bep).toBeGreaterThan(1000);
-	});
-});
-
-describe('sumPositions', () => {
-	it('totals cost, value and pl', () => {
-		const t = sumPositions([
-			{ cost: 100, value: 150 },
-			{ cost: 200, value: 180 }
-		]);
-		expect(t).toEqual({ cost: 300, value: 330, pl: 30, pct: 10 });
 	});
 });
 

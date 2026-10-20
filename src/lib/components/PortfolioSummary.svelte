@@ -1,21 +1,18 @@
 <script lang="ts">
 	import type { Fees } from '#lib/models/stock.ts';
-	import { sumPositions } from '#lib/utils/position.ts';
 	import { fmt, sgn } from '#lib/utils/number.ts';
 
 	let {
-		items,
+		unrealized,
 		realized,
 		fees,
 		onfees
 	}: {
-		items: { cost: number; value: number }[];
+		unrealized: number;
 		realized: number;
 		fees: Fees;
 		onfees: (fees: Fees) => void;
 	} = $props();
-
-	const unrealized = $derived(sumPositions(items).pl);
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {

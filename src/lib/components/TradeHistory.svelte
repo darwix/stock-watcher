@@ -201,9 +201,7 @@
 			sans-serif;
 	}
 	.acts .save {
-		font:
-			600 0.8rem Geist,
-			sans-serif;
+		font-weight: 600;
 		color: var(--text);
 	}
 	input,

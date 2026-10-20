@@ -24,10 +24,10 @@ describe('Portfolio', () => {
 		const reloaded = new Portfolio(storage);
 		expect(reloaded.trades[0]).toMatchObject({ ...trade, side: 'buy', fee: 0.15 });
 		expect(reloaded.fees).toEqual({ buy: 0.1, sell: 0.2 });
-		expect(reloaded.holdings['BBRI.JK'].lot).toBe(20);
+		expect(reloaded.book.holdings['BBRI.JK'].lot).toBe(20);
 		reloaded.addTrade({ ...trade, date: '2026-10-02', side: 'sell', lot: 5 });
 		expect(reloaded.trades[1].fee).toBe(0.2);
-		expect(reloaded.realized).not.toBe(0);
+		expect(reloaded.book.realized).not.toBe(0);
 	});
 
 	it('rejects oversell and deletes that break later sells', () => {
@@ -54,7 +54,7 @@ describe('Portfolio', () => {
 			p.updateTrade(buy.id, { ...base, date: '2026-10-01', side: 'buy', lot: 8, price: 900 })
 		).toBeUndefined();
 		expect(p.trades[0]).toMatchObject({ id: buy.id, lot: 8, price: 900, fee: 0.15 });
-		expect(p.holdings.A.lot).toBe(3);
+		expect(p.book.holdings.A.lot).toBe(3);
 		expect(p.updateTrade(buy.id, { ...base, date: '2026-10-01', side: 'buy', lot: 4 })).toMatch(
 			/4 lot/
 		);

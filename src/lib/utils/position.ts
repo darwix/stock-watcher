@@ -21,12 +21,6 @@ export function calcPosition({ lot, cost }: Holding, live: number, sellFee: numb
 	return { cost, value, pl, pct: (pl / cost) * 100, bep: ceilTick(cost / (shares * sellKeep)) };
 }
 
-export function sumPositions(items: { cost: number; value: number }[]) {
-	const cost = items.reduce((a, c) => a + c.cost, 0);
-	const value = items.reduce((a, c) => a + c.value, 0);
-	return { cost, value, pl: value - cost, pct: ((value - cost) / cost) * 100 };
-}
-
 /** replays trades by date with average-cost basis; throws on selling more than held */
 export function ledger(trades: Trade[]) {
 	const holdings: Record<string, Holding> = {};
