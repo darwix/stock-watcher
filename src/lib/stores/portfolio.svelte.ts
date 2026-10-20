@@ -7,6 +7,7 @@ const KEY = 'portfolio';
 type Saved = {
 	trades?: Trade[];
 	fees?: Fees;
+	goal?: number;
 	/** pre-history format */
 	positions?: Record<string, { price: number; lot: number }>;
 };
@@ -14,11 +15,14 @@ type Saved = {
 export class Portfolio {
 	trades = $state<Trade[]>([]);
 	fees = $state<Fees>({ buy: 0.15, sell: 0.25 });
+	/** total profit target, 0 = none */
+	goal = $state(0);
 	book = $derived(ledger(this.trades));
 
 	constructor(private storage: Storage | undefined) {
 		const saved = load(storage, KEY) as Saved | undefined;
 		if (saved?.fees) this.fees = saved.fees;
+		if (saved?.goal) this.goal = saved.goal;
 		if (saved?.trades) this.trades = saved.trades;
 		else if (saved?.positions) {
 			const date = new Intl.DateTimeFormat('sv', { timeZone: 'Asia/Jakarta' }).format();
@@ -50,6 +54,11 @@ export class Portfolio {
 		return this.commit(this.trades.filter((t) => t.id !== id));
 	}
 
+	setGoal(goal: number) {
+		this.goal = goal;
+		this.save();
+	}
+
 	setFees(fees: Fees) {
 		this.fees = fees;
 		this.save();
@@ -66,6 +75,6 @@ export class Portfolio {
 	}
 
 	private save() {
-		save(this.storage, KEY, { trades: this.trades, fees: this.fees });
+		save(this.storage, KEY, { trades: this.trades, fees: this.fees, goal: this.goal });
 	}
 }

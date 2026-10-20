@@ -91,6 +91,8 @@
 			realized={portfolio.book.realized}
 			fees={portfolio.fees}
 			onfees={(f) => portfolio?.setFees(f)}
+			goal={portfolio.goal}
+			ongoal={(g) => portfolio?.setGoal(g)}
 		/>
 	{/if}
 

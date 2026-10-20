@@ -1,18 +1,32 @@
 <script lang="ts">
 	import type { Fees } from '#lib/models/stock.ts';
-	import { fmt, sgn } from '#lib/utils/number.ts';
+	import { fmt, groupDigits, parseDigits, sgn } from '#lib/utils/number.ts';
 
 	let {
 		unrealized,
 		realized,
 		fees,
-		onfees
+		goal,
+		onfees,
+		ongoal
 	}: {
 		unrealized: number;
 		realized: number;
 		fees: Fees;
 		onfees: (fees: Fees) => void;
+		goal: number;
+		ongoal: (goal: number) => void;
 	} = $props();
+
+	const total = $derived(realized + unrealized);
+
+	function setGoal(e: Event & { currentTarget: HTMLInputElement }) {
+		const el = e.currentTarget;
+		const g = groupDigits(el.value, el.selectionStart ?? el.value.length);
+		el.value = g.value;
+		el.setSelectionRange(g.caret, g.caret);
+		ongoal(parseDigits(g.value) || 0);
+	}
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
@@ -22,7 +36,7 @@
 </script>
 
 <section class="summary" aria-label="Portfolio">
-	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total profit', realized + unrealized]] as const as [lbl, v], i (lbl)}
+	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total profit', total]] as const as [lbl, v], i (lbl)}
 		<div>
 			<div class="lbl">{lbl}</div>
 			<div class="val" class:total={i === 2} class:up={v > 0} class:down={v < 0}>
@@ -30,6 +44,25 @@
 			</div>
 		</div>
 	{/each}
+	<div class="goal">
+		<label>
+			Goal
+			<input
+				inputmode="numeric"
+				placeholder="5.000.000"
+				value={goal ? fmt.format(goal) : ''}
+				oninput={setGoal}
+				aria-label="Profit goal"
+			/>
+		</label>
+		{#if goal > 0}
+			<progress max={goal} value={Math.max(0, total)}></progress>
+			<span>
+				{Math.max(0, (total / goal) * 100).toFixed(0)}% ·
+				{total >= goal ? 'reached' : `${fmt.format(Math.round(goal - total))} to go`}
+			</span>
+		{/if}
+	</div>
 	<div class="fees">
 		Fees
 		<label>
@@ -87,7 +120,27 @@
 	.down {
 		color: var(--down);
 	}
+	.goal {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		align-items: center;
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+	.goal input {
+		width: 8rem;
+	}
+	progress {
+		flex: 1;
+		min-width: 6rem;
+		height: 0.5rem;
+		accent-color: var(--up);
+	}
 	.fees {
+		grid-row: 1;
+		grid-column: 4;
 		justify-self: end;
 		display: flex;
 		flex-wrap: wrap;
@@ -128,6 +181,7 @@
 		.fees {
 			justify-self: start;
 			grid-column: 1 / -1;
+			grid-row: auto;
 		}
 	}
 </style>
