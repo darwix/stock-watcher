@@ -21,12 +21,87 @@
 	const total = $derived(realized + unrealized);
 	const pct = $derived(Math.max(0, (total / goal) * 100));
 
+	let sheet: HTMLDialogElement;
+	const presets = [1e6, 1.5e6, 5e6, 1e7];
+
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
 		const v = parseFloat(e.currentTarget.value.replace(',', '.'));
 		if (v >= 0 && v < 100) onfees({ ...fees, [key]: v });
 	}
 </script>
+
+<!-- phone: goal hero; desktop: hidden -->
+<div class="hero">
+	<button class="ring" onclick={() => sheet.showModal()} aria-label="Edit goal and fees">
+		<svg viewBox="0 0 36 36" aria-hidden="true">
+			<circle cx="18" cy="18" r="15.9" pathLength="100" />
+			{#if pct > 0}
+				<circle
+					class="arc"
+					cx="18"
+					cy="18"
+					r="15.9"
+					pathLength="100"
+					stroke-dasharray="{Math.min(pct, 100)} 100"
+				/>
+			{/if}
+		</svg>
+		<span>{goal > 0 ? `${pct.toFixed(0)}%` : 'Goal'}</span>
+	</button>
+	<div class="hero-txt">
+		<div class="lbl">Total</div>
+		<div class="val" class:up={total > 0} class:down={total < 0}>
+			{sgn(total)}{fmt.format(Math.round(total))}
+		</div>
+		<div class="note">
+			{#if goal > 0}
+				of {fmt.format(goal)} · {total >= goal
+					? 'reached'
+					: `${fmt.format(Math.round(goal - total))} to go`}
+			{:else}
+				no goal set
+			{/if}
+		</div>
+		<div class="note row">
+			fees {fees.buy} / {fees.sell}%
+			<button class="edit" onclick={() => sheet.showModal()}>Edit</button>
+		</div>
+	</div>
+</div>
+
+<dialog bind:this={sheet} class="sheet" onclick={(e) => e.target === sheet && sheet.close()}>
+	<form method="dialog">
+		<h2>Goal &amp; fees</h2>
+		<label class="field">
+			<span class="lbl">Profit goal</span>
+			<input
+				inputmode="numeric"
+				placeholder="5.000.000"
+				value={goal ? fmt.format(goal) : ''}
+				oninput={(e) => ongoal(parseDigits(groupInput(e.currentTarget)))}
+			/>
+		</label>
+		<div class="chips">
+			{#each presets as p (p)}
+				<button type="button" class:sel={goal === p} onclick={() => ongoal(p)}>
+					{fmt.format(p / 1e6)}jt
+				</button>
+			{/each}
+		</div>
+		<div class="pair">
+			<label class="field">
+				<span class="lbl">Buy fee %</span>
+				<input inputmode="decimal" value={fees.buy} oninput={(e) => setFee('buy', e)} />
+			</label>
+			<label class="field">
+				<span class="lbl">Sell fee %</span>
+				<input inputmode="decimal" value={fees.sell} oninput={(e) => setFee('sell', e)} />
+			</label>
+		</div>
+		<button class="done">Done</button>
+	</form>
+</dialog>
 
 <section class="summary" aria-label="Portfolio">
 	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total', total]] as const as [lbl, v] (lbl)}
@@ -77,14 +152,17 @@
 </section>
 
 <style>
-	.summary {
+	.summary,
+	.hero {
 		margin-top: 0.75rem;
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
 		border: 1px solid var(--line);
 		border-radius: 10px;
 		font-family: 'Geist Mono', ui-monospace, monospace;
 		font-variant-numeric: tabular-nums;
+	}
+	.summary {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
 	.cell {
 		padding: 0.9rem 1rem;
@@ -154,15 +232,161 @@
 		outline: none;
 		border-color: var(--line);
 	}
+	.hero {
+		display: none;
+	}
+	.sheet {
+		box-sizing: border-box;
+		margin: auto auto 0;
+		width: 100%;
+		max-width: 480px;
+		padding: 0.6rem 1rem 1.25rem;
+		color: var(--text);
+		background: #111;
+		border: 0;
+		border-top: 1px solid var(--line);
+		border-radius: 20px 20px 0 0;
+	}
+	.sheet::backdrop {
+		background: rgb(0 0 0 / 0.55);
+	}
+	.sheet form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	.sheet h2 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 600;
+	}
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+	.sheet input {
+		min-height: 44px;
+		padding: 0 0.75rem;
+		font-size: 1rem;
+		background: #141414;
+		border-color: var(--line);
+		border-radius: 8px;
+		field-sizing: fixed;
+		box-sizing: border-box;
+		width: 100%;
+	}
+	.sheet input:focus-visible {
+		border-color: var(--muted);
+	}
+	.pair {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.6rem;
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.sheet button {
+		min-height: 36px;
+		padding: 0 0.75rem;
+		font:
+			500 0.8rem 'Geist Mono',
+			monospace;
+		color: var(--text);
+		background: none;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	.chips .sel {
+		color: var(--up);
+		border-color: var(--up);
+	}
+	.sheet .done {
+		min-height: 44px;
+		color: var(--bg);
+		background: var(--text);
+		border-color: var(--text);
+	}
 	@media (max-width: 720px) {
+		.hero {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			padding: 0.9rem 1rem;
+		}
+		.ring {
+			position: relative;
+			flex: none;
+			width: 84px;
+			height: 84px;
+			padding: 0;
+			color: var(--text);
+			background: none;
+			border: 0;
+			border-radius: 50%;
+			cursor: pointer;
+		}
+		.ring svg {
+			width: 100%;
+			height: 100%;
+			transform: rotate(-90deg);
+		}
+		.ring circle {
+			fill: none;
+			stroke: var(--line);
+			stroke-width: 3;
+		}
+		.ring .arc {
+			stroke: var(--up);
+			stroke-linecap: round;
+		}
+		.ring span {
+			position: absolute;
+			inset: 0;
+			display: grid;
+			place-items: center;
+			font:
+				500 0.85rem 'Geist Mono',
+				monospace;
+		}
+		.hero-txt {
+			flex: 1;
+			min-width: 0;
+		}
+		.hero .val {
+			font-size: 1.4rem;
+		}
+		.note {
+			font-size: 0.75rem;
+			color: var(--muted);
+		}
+		.row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		.edit {
+			min-height: 44px;
+			padding: 0;
+			font: inherit;
+			color: var(--muted);
+			text-decoration: underline;
+			text-underline-offset: 3px;
+			background: none;
+			border: 0;
+			cursor: pointer;
+		}
 		.summary {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+			margin-top: 0.6rem;
 		}
-		/* total and goal get full rows so the goal inputs don't wrap */
+		/* total + goal live in the hero on phones */
 		.cell:nth-child(n + 3) {
-			grid-column: 1 / -1;
-			border-left: 0;
-			border-top: 1px solid var(--line);
+			display: none;
 		}
 		.val {
 			font-size: 1.1rem;
