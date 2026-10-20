@@ -47,6 +47,11 @@
 		year: 'numeric',
 		timeZone: 'UTC'
 	});
+	const shortFmt = new Intl.DateTimeFormat('en-GB', {
+		day: 'numeric',
+		month: 'short',
+		timeZone: 'UTC'
+	});
 	/** timeline item showing its edit/delete actions */
 	let picked = $state<number>();
 	const amount = (t: Trade) =>
@@ -94,10 +99,10 @@
 							</td>
 						</tr>
 					{:else}
-						<tr>
-							<td>{t.date}</td>
+						<tr class={t.side}>
+							<td title={dayFmt.format(new Date(t.date))}>{shortFmt.format(new Date(t.date))}</td>
 							<td>{t.symbol.replace('.JK', '')}</td>
-							<td><span class="tag {t.side}">{t.side.toUpperCase()}</span></td>
+							<td class={t.side}>{t.side}</td>
 							<td>{fmt.format(t.price)}</td>
 							<td>{fmt.format(t.lot)}</td>
 							<td>{t.fee}%</td>
@@ -193,8 +198,7 @@
 	}
 	.card {
 		overflow-x: auto;
-		padding: 0.5rem 1.2rem;
-		background: var(--card);
+		border: 1px solid var(--line);
 		border-radius: 10px;
 	}
 	table {
@@ -206,7 +210,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	th {
-		padding: 0.5rem;
+		padding: 0.6rem 1rem;
 		font-size: 0.7rem;
 		font-weight: 500;
 		text-transform: uppercase;
@@ -220,7 +224,30 @@
 		border-bottom: 1px solid var(--line);
 	}
 	td {
-		padding: 0.55rem 0.5rem;
+		padding: 0.65rem 1rem;
+	}
+	/* side rail */
+	tr.buy td:first-child {
+		box-shadow: inset 3px 0 var(--up);
+	}
+	tr.sell td:first-child {
+		box-shadow: inset 3px 0 var(--down);
+	}
+	tbody tr:hover td {
+		background: var(--card);
+	}
+	tr:not(.editing) .acts button {
+		opacity: 0;
+		transition: opacity 0.2s;
+	}
+	tr:hover .acts button,
+	.acts button:focus-visible {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		tr:not(.editing) .acts button {
+			opacity: 1;
+		}
 	}
 	tr:last-child td {
 		border-bottom: 0;
@@ -229,19 +256,11 @@
 	td:nth-child(-n + 3) {
 		text-align: left;
 	}
-	.tag {
-		padding: 0.1rem 0.45rem;
-		border: 1px solid;
-		border-radius: 4px;
-		font:
-			600 0.7rem Geist,
-			sans-serif;
-	}
-	.buy,
+	td.buy,
 	.up {
 		color: var(--up);
 	}
-	.sell,
+	td.sell,
 	.down {
 		color: var(--down);
 	}

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Trade history, desktop</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			:root {
+				--bg: #0a0a0a;
+				--card: #141414;
+				--text: #e8e8e8;
+				--muted: #808080;
+				--line: #2a2a2a;
+				--up: #5bd68f;
+				--down: #ff7a63;
+				color-scheme: dark;
+			}
+			body {
+				margin: 0;
+				padding: 2rem 1rem;
+				background: var(--bg);
+				color: var(--text);
+				font:
+					0.85rem 'Geist Mono',
+					monospace;
+				font-variant-numeric: tabular-nums;
+			}
+			.opt {
+				max-width: 1200px;
+				margin: 0 auto 3rem;
+			}
+			.tag-opt {
+				font-weight: 600;
+				color: #f5b04b;
+				font-size: 0.75rem;
+				margin-bottom: 1rem;
+			}
+			.tag-opt span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			h2 {
+				margin: 0 0 0.6rem;
+				font-size: 0.72rem;
+				font-weight: 500;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+			}
+			.box {
+				border: 1px solid var(--line);
+				border-radius: 10px;
+				overflow: hidden;
+			}
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			th {
+				padding: 0.6rem 1rem;
+				font-size: 0.7rem;
+				font-weight: 500;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+			}
+			th,
+			td {
+				text-align: right;
+				white-space: nowrap;
+				border-bottom: 1px solid var(--line);
+			}
+			td {
+				padding: 0.65rem 1rem;
+			}
+			tr:last-child td {
+				border-bottom: 0;
+			}
+			th:nth-child(-n + 3),
+			td:nth-child(-n + 3) {
+				text-align: left;
+			}
+			/* side rail */
+			td:first-child {
+				box-shadow: inset 3px 0 var(--up);
+			}
+			tr.s td:first-child {
+				box-shadow: inset 3px 0 var(--down);
+			}
+			.m {
+				color: var(--muted);
+			}
+			.buy,
+			.up {
+				color: var(--up);
+			}
+			.sell,
+			.down {
+				color: var(--down);
+			}
+			small {
+				display: block;
+				font-size: 0.72rem;
+				color: var(--muted);
+				margin-top: 0.15rem;
+			}
+			.acts {
+				width: 4.5rem;
+				color: var(--muted);
+			}
+			.acts span {
+				visibility: hidden;
+				padding: 0 0.3rem;
+			}
+			tr.hover td {
+				background: var(--card);
+			}
+			tr.hover .acts span {
+				visibility: visible;
+			}
+		</style>
+	</head>
+	<body>
+		<section class="opt">
+			<div class="tag-opt">
+				D1 · Fixes 1–4
+				<span>— bordered, side rail, short dates, actions on hover (row 2 hovered)</span>
+			</div>
+			<h2>Trade history</h2>
+			<div class="box">
+				<table>
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Symbol</th>
+							<th>Side</th>
+							<th>Price</th>
+							<th>Lot</th>
+							<th>Fee</th>
+							<th>Amount</th>
+							<th>Realized P/L</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="s">
+							<td title="Wed, 10 Sept 2026">10 Sep</td>
+							<td><b>TLKM</b></td>
+							<td class="sell">sell</td>
+							<td>3.200</td>
+							<td>10</td>
+							<td class="m">0,25%</td>
+							<td>3.192.000</td>
+							<td class="up">+688.250</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+						<tr class="hover">
+							<td>2 Sep</td>
+							<td><b>TLKM</b></td>
+							<td class="buy">buy</td>
+							<td>2.500</td>
+							<td>20</td>
+							<td class="m">0,15%</td>
+							<td>5.007.500</td>
+							<td class="m">—</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+						<tr>
+							<td>1 Sep</td>
+							<td><b>BBCA</b></td>
+							<td class="buy">buy</td>
+							<td>8.000</td>
+							<td>10</td>
+							<td class="m">0,15%</td>
+							<td>8.012.000</td>
+							<td class="m">—</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="opt">
+			<div class="tag-opt">D2 · Fixes 1–5 <span>— same, fee folded under amount</span></div>
+			<h2>Trade history</h2>
+			<div class="box">
+				<table>
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Symbol</th>
+							<th>Side</th>
+							<th>Price</th>
+							<th>Lot</th>
+							<th>Amount</th>
+							<th>Realized P/L</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="s">
+							<td>10 Sep</td>
+							<td><b>TLKM</b></td>
+							<td class="sell">sell</td>
+							<td>3.200</td>
+							<td>10</td>
+							<td>3.192.000<small>fee 0,25%</small></td>
+							<td class="up">+688.250</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+						<tr class="hover">
+							<td>2 Sep</td>
+							<td><b>TLKM</b></td>
+							<td class="buy">buy</td>
+							<td>2.500</td>
+							<td>20</td>
+							<td>5.007.500<small>fee 0,15%</small></td>
+							<td class="m">—</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+						<tr>
+							<td>1 Sep</td>
+							<td><b>BBCA</b></td>
+							<td class="buy">buy</td>
+							<td>8.000</td>
+							<td>10</td>
+							<td>8.012.000<small>fee 0,15%</small></td>
+							<td class="m">—</td>
+							<td class="acts"><span>✎</span><span>×</span></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</body>
+</html>
