@@ -1,0 +1,36 @@
+name: Android
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: Version code (must increase every Play upload)
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g @bubblewrap/cli
+      - name: Configure Bubblewrap
+        run: |
+          mkdir -p ~/.bubblewrap
+          echo "{\"jdkPath\":\"$JAVA_HOME_17_X64\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
+          jq '.appVersionCode = ${{ inputs.version_code }} | .appVersionName = "${{ inputs.version_code }}"' twa-manifest.json > t && mv t twa-manifest.json
+      - run: bubblewrap update --skipVersionUpgrade
+      - run: bubblewrap build --skipPwaValidation
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: |
+            android/app-release-bundle.aab
+            android/app-release-signed.apk

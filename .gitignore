@@ -29,3 +29,4 @@ vite.config.ts.timestamp-*
 .agents/
 .claude/skills/
 skills-lock.json
+android.keystore
