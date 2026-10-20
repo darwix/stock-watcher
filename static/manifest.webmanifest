@@ -2,6 +2,7 @@
 	"name": "IDX watchlist",
 	"short_name": "IDX",
 	"description": "Live Indonesia Stock Exchange prices with P/L and break-even calculator.",
+	"id": "/",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#0a0a0a",
