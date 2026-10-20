@@ -24,3 +24,8 @@ vite.config.ts.timestamp-*
 
 .vercel
 .env*
+
+# agent skills installed by vercel integrations
+.agents/
+.claude/skills/
+skills-lock.json
