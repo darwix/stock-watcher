@@ -15,7 +15,10 @@ const req = (token?: string, body?: unknown) =>
 		headers: token ? { authorization: `Bearer ${token}` } : {},
 		body: body === undefined ? undefined : JSON.stringify(body)
 	});
-const status = (p: Promise<Response>) => p.then((r) => r.status).catch((e: Response) => e.status);
+const status = (p: Response | Promise<Response>) =>
+	Promise.resolve(p)
+		.then((r) => r.status)
+		.catch((e: Response) => e.status);
 
 beforeEach(() => sql.mockReset());
 

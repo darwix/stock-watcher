@@ -44,5 +44,10 @@
 	},
 	"lint-staged": {
 		"*": "prettier --write --ignore-unknown"
+	},
+	"dependencies": {
+		"@neondatabase/auth": "^0.6.0-beta",
+		"@neondatabase/serverless": "^1.2.0",
+		"jose": "^6.2.13"
 	}
 }

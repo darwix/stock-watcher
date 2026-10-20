@@ -10,6 +10,9 @@
 	import { fmt } from '#lib/utils/number.ts';
 	import { isMarketOpen } from '#lib/utils/market.ts';
 	import type { Quote, QuoteResult } from '#lib/models/stock.ts';
+	import type { Storage } from '#lib/utils/storage.ts';
+	import { remoteStorage } from '#lib/utils/remote.ts';
+	import { createAuthClient } from '@neondatabase/auth';
 
 	const REFRESH_MS = 15_000;
 
@@ -21,6 +24,49 @@
 	// price before the latest update, to flash the box when it moves
 	let prev = $state<Record<string, number>>({});
 	let open = $state(isMarketOpen());
+	const auth = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL);
+	let user = $state<{ name: string }>();
+	let syncError = $state('');
+
+	async function api(method: 'GET' | 'PUT', body?: unknown) {
+		// Neon Auth puts the JWT on the (cached, auto-refreshed) session
+		const token = (await auth.getSession()).data?.session.token;
+		const res = await fetch('/api/portfolio', {
+			method,
+			headers: { authorization: `Bearer ${token}` },
+			body: body ? JSON.stringify(body) : undefined
+		});
+		if (!res.ok) throw new Error(String(res.status));
+		return res;
+	}
+
+	// guests use this device; signed-in users use their account copy
+	async function storage(): Promise<Storage> {
+		const { data } = await auth.getSession();
+		if (!data?.user) return localStorage;
+		user = data.user;
+		const push = (d: unknown) =>
+			api('PUT', d).then(
+				() => (syncError = ''),
+				() => (syncError = 'Not saved to your account. Retrying on next change.')
+			);
+		try {
+			const saved: Record<string, string> | null = await (await api('GET')).json();
+			if (saved) return remoteStorage(saved, push);
+			// ponytail: new account starts from this device's guest data; existing account wins
+			const seed = Object.fromEntries(
+				['watchlist', 'portfolio'].map((k) => [k, localStorage.getItem(k)]).filter(([, v]) => v)
+			);
+			push(seed);
+			return remoteStorage(seed, push);
+		} catch {
+			syncError = "Couldn't load your account. Showing this device's data, not synced.";
+			return localStorage;
+		}
+	}
+
+	const signIn = () => auth.signIn.social({ provider: 'google', callbackURL: location.href });
+	const signOut = () => auth.signOut().then(() => location.reload());
 
 	async function refresh(symbols = watchlist?.symbols ?? []) {
 		if (!symbols.length) return;
@@ -49,9 +95,11 @@
 	}
 
 	onMount(() => {
-		watchlist = new Watchlist(localStorage);
-		portfolio = new Portfolio(localStorage);
-		refresh();
+		storage().then((s) => {
+			watchlist = new Watchlist(s);
+			portfolio = new Portfolio(s);
+			refresh();
+		});
 		const id = setInterval(() => {
 			open = isMarketOpen();
 			if (open) refresh();
@@ -82,7 +130,13 @@
 		<h1>IDX</h1>
 		<div class="grow"><StockSearch onpick={add} /></div>
 		<span class="badge" class:live={open}>{open ? '● Live' : 'Closed'}</span>
+		{#if user}
+			<button class="acct" onclick={signOut} title="Signed in as {user.name}">Sign out</button>
+		{:else if watchlist}
+			<button class="acct" onclick={signIn}>Sign in</button>
+		{/if}
 	</header>
+	{#if syncError}<p class="sync" role="alert">{syncError}</p>{/if}
 
 	{#if portfolio?.trades.length}
 		<PortfolioSummary
@@ -193,6 +247,26 @@
 		background: var(--board);
 		border: 1px solid var(--line);
 		border-radius: 10px;
+	}
+	.acct {
+		padding: 0.3rem 0.7rem;
+		font:
+			500 0.8rem Geist,
+			sans-serif;
+		color: var(--text);
+		background: none;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+	.acct:hover {
+		background: var(--card);
+	}
+	.sync {
+		margin: 0.5rem 0 0;
+		font-size: 0.8rem;
+		color: #f5b04b;
 	}
 	.grow {
 		flex: 1;
