@@ -137,7 +137,11 @@
 							onadd={(t) => portfolio?.addTrade(t)}
 						/>
 					{/if}
-					<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button>
+					<!-- held stocks stay so their unrealized P/L keeps a live price -->
+					{#if !portfolio?.book.holdings[s]?.lot}
+						<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button
+						>
+					{/if}
 				</article>
 			{/each}
 		</section>
