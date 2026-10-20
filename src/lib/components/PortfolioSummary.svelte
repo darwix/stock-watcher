@@ -19,6 +19,7 @@
 	} = $props();
 
 	const total = $derived(realized + unrealized);
+	const pct = $derived(Math.max(0, (total / goal) * 100));
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
@@ -28,16 +29,16 @@
 </script>
 
 <section class="summary" aria-label="Portfolio">
-	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total profit', total]] as const as [lbl, v], i (lbl)}
-		<div>
+	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total', total]] as const as [lbl, v] (lbl)}
+		<div class="cell">
 			<div class="lbl">{lbl}</div>
-			<div class="val" class:total={i === 2} class:up={v > 0} class:down={v < 0}>
+			<div class="val" class:up={v > 0} class:down={v < 0}>
 				{sgn(v)}{fmt.format(Math.round(v))}
 			</div>
 		</div>
 	{/each}
-	<div class="goal">
-		<label>
+	<div class="cell goal">
+		<label class="lbl">
 			Goal
 			<input
 				inputmode="numeric"
@@ -46,65 +47,66 @@
 				oninput={(e) => ongoal(parseDigits(groupInput(e.currentTarget)))}
 				aria-label="Profit goal"
 			/>
+			{#if goal > 0}{pct.toFixed(0)}%{/if}
 		</label>
 		{#if goal > 0}
-			<progress max={goal} value={total}></progress>
-			<span>
-				{Math.max(0, (total / goal) * 100).toFixed(0)}% ·
-				{total >= goal ? 'reached' : `${fmt.format(Math.round(goal - total))} to go`}
-			</span>
+			<div
+				class="seg"
+				role="progressbar"
+				aria-valuenow={Math.round(pct)}
+				title={total >= goal ? 'reached' : `${fmt.format(Math.round(goal - total))} to go`}
+			>
+				{#each { length: 10 }, i (i)}<i class:on={pct >= (i + 1) * 10}></i>{/each}
+			</div>
 		{/if}
-	</div>
-	<div class="fees">
-		Fees
-		<label>
-			buy
+		<div class="fees">
+			fees
 			<input
 				inputmode="decimal"
 				value={fees.buy}
 				oninput={(e) => setFee('buy', e)}
 				aria-label="Buy fee percent"
-			/>%
-		</label>
-		·
-		<label>
-			sell
-			<input
+			/>/<input
 				inputmode="decimal"
 				value={fees.sell}
 				oninput={(e) => setFee('sell', e)}
 				aria-label="Sell fee percent"
 			/>%
-		</label>
+		</div>
 	</div>
 </section>
 
 <style>
 	.summary {
-		margin-top: 1rem;
+		margin-top: 0.75rem;
 		display: grid;
-		grid-template-columns: repeat(3, auto) 1fr;
-		gap: 0.5rem 2.5rem;
-		align-items: end;
-		padding: 1rem 1.2rem;
-		background: var(--card);
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		border: 1px solid var(--line);
 		border-radius: 10px;
 		font-family: 'Geist Mono', ui-monospace, monospace;
 		font-variant-numeric: tabular-nums;
 	}
+	.cell {
+		padding: 0.9rem 1rem;
+		border-left: 1px solid var(--line);
+	}
+	.cell:first-child {
+		border-left: 0;
+	}
 	.lbl {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
 		font-size: 0.72rem;
 		color: var(--muted);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		margin-bottom: 0.2rem;
 	}
 	.val {
 		font-size: 1.35rem;
 		font-weight: 500;
-	}
-	.val.total {
-		font-size: 1.6rem;
+		margin-top: 0.3rem;
 	}
 	.up {
 		color: var(--up);
@@ -112,68 +114,58 @@
 	.down {
 		color: var(--down);
 	}
-	.goal {
-		grid-column: 1 / -1;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		align-items: center;
-		font-size: 0.8rem;
-		color: var(--muted);
+	.seg {
+		display: grid;
+		grid-template-columns: repeat(10, 1fr);
+		gap: 3px;
+		margin-top: 0.5rem;
 	}
-	.goal input {
-		width: 8rem;
+	.seg i {
+		height: 8px;
+		border-radius: 2px;
+		background: var(--line);
 	}
-	progress {
-		flex: 1;
-		min-width: 6rem;
-		height: 0.5rem;
-		accent-color: var(--up);
+	.seg i.on {
+		background: var(--up);
 	}
 	.fees {
-		grid-row: 1;
-		grid-column: 4;
-		justify-self: end;
+		margin-top: 0.4rem;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
 		align-items: center;
+		gap: 0.15rem;
 		font-size: 0.8rem;
 		color: var(--muted);
 	}
-	label {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
 	input {
-		width: 5rem;
-		padding: 0.3rem 0.45rem;
+		padding: 0.1rem 0.2rem;
 		font:
-			500 0.85rem 'Geist Mono',
+			500 0.8rem 'Geist Mono',
 			monospace;
 		color: var(--text);
-		background: var(--board);
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		background: none;
+		border: 1px solid transparent;
+		border-radius: 4px;
+		field-sizing: content;
+		min-width: 2ch;
 	}
+	input:hover,
 	input:focus-visible {
 		outline: none;
-		border-color: var(--muted);
+		border-color: var(--line);
 	}
 	@media (max-width: 720px) {
 		.summary {
-			grid-template-columns: 1fr 1fr;
-			gap: 0.75rem 1rem;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
-		.val,
-		.val.total {
-			font-size: 1.1rem;
-		}
-		.fees {
-			justify-self: start;
+		/* total and goal get full rows so the goal inputs don't wrap */
+		.cell:nth-child(n + 3) {
 			grid-column: 1 / -1;
-			grid-row: auto;
+			border-left: 0;
+			border-top: 1px solid var(--line);
+		}
+		.val {
+			font-size: 1.1rem;
 		}
 	}
 </style>

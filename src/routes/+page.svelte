@@ -79,11 +79,10 @@
 
 <main>
 	<header>
-		<h1>IDX watchlist</h1>
-		<span class="badge" class:live={open}>{open ? '● Live · 15s' : 'Market closed'}</span>
+		<h1>IDX</h1>
+		<div class="grow"><StockSearch onpick={add} /></div>
+		<span class="badge" class:live={open}>{open ? '● Live' : 'Closed'}</span>
 	</header>
-
-	<StockSearch onpick={add} />
 
 	{#if portfolio?.trades.length}
 		<PortfolioSummary
@@ -161,12 +160,12 @@
 
 <style>
 	:global(:root) {
-		--bg: #0e0f11;
-		--board: #0b0c0d;
-		--card: #131517;
-		--text: #d9d6cf;
-		--muted: #7d7a74;
-		--line: #272a2f;
+		--bg: #0a0a0a;
+		--board: #000;
+		--card: #141414;
+		--text: #e8e8e8;
+		--muted: #808080;
+		--line: #2a2a2a;
 		--up: #5bd68f;
 		--down: #ff7a63;
 		color-scheme: dark;
@@ -189,15 +188,22 @@
 	header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.25rem;
+		gap: 1rem;
+		padding: 0.6rem 0.75rem;
+		background: var(--board);
+		border: 1px solid var(--line);
+		border-radius: 10px;
+	}
+	.grow {
+		flex: 1;
+		--card: var(--bg);
 	}
 	h1 {
 		margin: 0;
-		font-size: 1.6rem;
+		font-size: 1.05rem;
 		font-weight: 600;
 		letter-spacing: -0.02em;
-		color: #ecebe8;
+		color: #fff;
 	}
 	.badge {
 		font:
@@ -320,6 +326,18 @@
 		margin-top: 3rem;
 		text-align: center;
 		color: var(--muted);
+	}
+	@media (max-width: 720px) {
+		header {
+			flex-wrap: wrap;
+		}
+		.grow {
+			flex-basis: 100%;
+			order: 3;
+		}
+		.badge {
+			margin-left: auto;
+		}
 	}
 	@media (hover: none) {
 		.x {

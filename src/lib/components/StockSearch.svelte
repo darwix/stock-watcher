@@ -61,19 +61,29 @@
 	}
 	input {
 		width: 100%;
-		padding: 0.6rem 0.8rem;
+		box-sizing: border-box;
+		padding: 0.45rem 0.7rem;
 		font: inherit;
 		border: 1px solid var(--line);
 		border-radius: 6px;
 		background: var(--card);
 		color: inherit;
 	}
-	ul {
+	/* float over the page so the header strip keeps its height */
+	ul,
+	p {
 		position: absolute;
 		z-index: 1;
 		inset: 100% 0 auto;
 		margin: 4px 0 0;
 		padding: 0;
+	}
+	p {
+		padding: 0.5rem 0.8rem;
+		background: var(--card);
+		border-radius: 6px;
+	}
+	ul {
 		list-style: none;
 		background: var(--card);
 		border: 1px solid var(--line);

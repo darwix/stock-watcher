@@ -4,7 +4,7 @@
 	"description": "Live Indonesia Stock Exchange prices with P/L and break-even calculator.",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#0e0f11",
-	"theme_color": "#0e0f11",
+	"background_color": "#0a0a0a",
+	"theme_color": "#0a0a0a",
 	"icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
 }

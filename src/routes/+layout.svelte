@@ -16,7 +16,7 @@
 	<title>{title}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={url} />
-	<meta name="theme-color" content="#0e0f11" />
+	<meta name="theme-color" content="#0a0a0a" />
 
 	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
