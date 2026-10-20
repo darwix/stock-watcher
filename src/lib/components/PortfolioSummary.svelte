@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Fees } from '#lib/models/stock.ts';
-	import { fmt, groupDigits, parseDigits, sgn } from '#lib/utils/number.ts';
+	import { fmt, groupInput, parseDigits, sgn } from '#lib/utils/number.ts';
 
 	let {
 		unrealized,
@@ -19,14 +19,6 @@
 	} = $props();
 
 	const total = $derived(realized + unrealized);
-
-	function setGoal(e: Event & { currentTarget: HTMLInputElement }) {
-		const el = e.currentTarget;
-		const g = groupDigits(el.value, el.selectionStart ?? el.value.length);
-		el.value = g.value;
-		el.setSelectionRange(g.caret, g.caret);
-		ongoal(parseDigits(g.value) || 0);
-	}
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
@@ -51,12 +43,12 @@
 				inputmode="numeric"
 				placeholder="5.000.000"
 				value={goal ? fmt.format(goal) : ''}
-				oninput={setGoal}
+				oninput={(e) => ongoal(parseDigits(groupInput(e.currentTarget)))}
 				aria-label="Profit goal"
 			/>
 		</label>
 		{#if goal > 0}
-			<progress max={goal} value={Math.max(0, total)}></progress>
+			<progress max={goal} value={total}></progress>
 			<span>
 				{Math.max(0, (total / goal) * 100).toFixed(0)}% ·
 				{total >= goal ? 'reached' : `${fmt.format(Math.round(goal - total))} to go`}

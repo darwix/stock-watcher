@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Fees, Holding, Trade } from '#lib/models/stock.ts';
 	import { calcPosition } from '#lib/utils/position.ts';
-	import { fmt, groupDigits, parseDigits, sgn } from '#lib/utils/number.ts';
+	import { fmt, groupInput, parseDigits, sgn } from '#lib/utils/number.ts';
 
 	let {
 		symbol,
@@ -48,15 +48,6 @@
 		queueMicrotask(() => priceEl?.focus());
 	}
 
-	// thousands dots while typing, caret stays after the same digit
-	function group(e: Event & { currentTarget: HTMLInputElement }) {
-		const el = e.currentTarget;
-		const g = groupDigits(el.value, el.selectionStart ?? el.value.length);
-		el.value = g.value;
-		el.setSelectionRange(g.caret, g.caret);
-		return g.value;
-	}
-
 	function submit(e: SubmitEvent & { currentTarget: HTMLFormElement }) {
 		e.preventDefault();
 		const p = parseDigits(price);
@@ -99,7 +90,7 @@
 					autocomplete="off"
 					bind:this={priceEl}
 					value={price}
-					oninput={(e) => (price = group(e))}
+					oninput={(e) => (price = groupInput(e.currentTarget))}
 				/>
 			</label>
 			<label>
@@ -110,7 +101,7 @@
 					autocomplete="off"
 					placeholder={side === 'sell' && held ? String(held.lot) : '10'}
 					value={lot}
-					oninput={(e) => (lot = group(e))}
+					oninput={(e) => (lot = groupInput(e.currentTarget))}
 				/>
 			</label>
 			<label class="full">

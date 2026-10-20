@@ -14,3 +14,11 @@ export function groupDigits(raw: string, caret: number) {
 		if (/\d/.test(value[pos])) seen++;
 	return { value, caret: pos };
 }
+
+/** groupDigits applied to an input while typing; returns the new value */
+export function groupInput(el: HTMLInputElement) {
+	const g = groupDigits(el.value, el.selectionStart ?? el.value.length);
+	el.value = g.value;
+	el.setSelectionRange(g.caret, g.caret);
+	return g.value;
+}
