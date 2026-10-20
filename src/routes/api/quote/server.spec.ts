@@ -22,7 +22,9 @@ describe('GET /api/quote', () => {
 	});
 
 	it('rejects bad symbols', async () => {
-		const res = await call('symbols=../evil', vi.fn() as never).catch((e) => e);
+		const res = await Promise.resolve(call('symbols=../evil', vi.fn() as never)).catch(
+			(e: Response) => e
+		);
 		expect(res.status).toBe(400);
 	});
 });
