@@ -3,6 +3,7 @@
 	import StockSearch from '#lib/components/StockSearch.svelte';
 	import PositionEditor from '#lib/components/PositionEditor.svelte';
 	import PortfolioSummary from '#lib/components/PortfolioSummary.svelte';
+	import TradeHistory from '#lib/components/TradeHistory.svelte';
 	import { Watchlist } from '#lib/stores/watchlist.svelte.ts';
 	import { Portfolio } from '#lib/stores/portfolio.svelte.ts';
 	import { calcPosition } from '#lib/utils/position.ts';
@@ -58,13 +59,13 @@
 		return () => clearInterval(id);
 	});
 
-	// positions on watched stocks that have a live price
+	// open holdings on watched stocks that have a live price
 	const held = $derived.by(() => {
 		if (!portfolio || !watchlist) return [];
-		const { positions, fees } = portfolio;
+		const { holdings, fees } = portfolio;
 		return watchlist.symbols
-			.filter((s) => positions[s] && quotes[s])
-			.map((s) => calcPosition(positions[s], quotes[s].price, fees));
+			.filter((s) => holdings[s]?.lot && quotes[s])
+			.map((s) => calcPosition(holdings[s], quotes[s].price, fees.sell));
 	});
 
 	const time = new Intl.DateTimeFormat('id-ID', {
@@ -81,8 +82,13 @@
 
 	<StockSearch onpick={add} />
 
-	{#if portfolio && held.length}
-		<PortfolioSummary items={held} fees={portfolio.fees} onfees={(f) => portfolio?.setFees(f)} />
+	{#if portfolio?.trades.length}
+		<PortfolioSummary
+			items={held}
+			realized={portfolio.realized}
+			fees={portfolio.fees}
+			onfees={(f) => portfolio?.setFees(f)}
+		/>
 	{/if}
 
 	{#if watchlist?.symbols.length}
@@ -121,9 +127,9 @@
 						<PositionEditor
 							symbol={s}
 							live={q?.price}
-							pos={portfolio.positions[s]}
+							holding={portfolio.holdings[s]}
 							fees={portfolio.fees}
-							onsave={(pos) => portfolio?.setPosition(s, pos)}
+							onadd={(t) => portfolio?.addTrade(t)}
 						/>
 					{/if}
 					<button class="x" aria-label="Remove {s}" onclick={() => watchlist?.remove(s)}>×</button>
@@ -132,6 +138,15 @@
 		</section>
 	{:else if watchlist}
 		<p class="empty">No stocks yet. Search above to add one.</p>
+	{/if}
+
+	{#if portfolio?.trades.length}
+		<TradeHistory
+			trades={portfolio.trades}
+			realizedById={portfolio.realizedById}
+			onupdate={(id, t) => portfolio?.updateTrade(id, t)}
+			onremove={(id) => portfolio?.removeTrade(id)}
+		/>
 	{/if}
 </main>
 

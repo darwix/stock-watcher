@@ -1,37 +1,49 @@
 <script lang="ts">
-	import type { Fees, Position } from '#lib/models/stock.ts';
+	import type { Fees, Holding, Trade } from '#lib/models/stock.ts';
 	import { calcPosition } from '#lib/utils/position.ts';
 	import { fmt, groupDigits, parseDigits, sgn } from '#lib/utils/number.ts';
 
 	let {
 		symbol,
 		live,
-		pos,
+		holding,
 		fees,
-		onsave
+		onadd
 	}: {
 		symbol: string;
 		live: number | undefined;
-		pos: Position | undefined;
+		holding: Holding | undefined;
 		fees: Fees;
-		onsave: (pos: Position | null) => void;
+		/** error message, or undefined when saved */
+		onadd: (t: Omit<Trade, 'id' | 'fee'>) => string | undefined;
 	} = $props();
 
 	let editing = $state(false);
+	let side = $state<Trade['side']>('buy');
 	let price = $state('');
 	let lot = $state('');
+	let date = $state('');
+	let error = $state('');
 	let priceEl = $state<HTMLInputElement>();
 
-	const calc = $derived(pos && live ? calcPosition(pos, live, fees) : undefined);
+	const held = $derived(holding?.lot ? holding : undefined);
+	const calc = $derived(held && live ? calcPosition(held, live, fees.sell) : undefined);
 	const draft = $derived.by(() => {
 		const p = parseDigits(price);
 		const l = parseDigits(lot);
-		return p > 0 && l > 0 && live ? calcPosition({ price: p, lot: l }, live, fees) : undefined;
+		if (!(p > 0 && l > 0)) return '';
+		const amount = p * l * 100;
+		return side === 'buy'
+			? `Cost ${fmt.format(Math.round(amount * (1 + fees.buy / 100)))}`
+			: `Proceeds ${fmt.format(Math.round(amount * (1 - fees.sell / 100)))}`;
 	});
 
 	function edit() {
-		price = pos ? fmt.format(pos.price) : '';
-		lot = pos ? fmt.format(pos.lot) : '';
+		side = 'buy';
+		price = live ? fmt.format(live) : '';
+		lot = '';
+		date = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Jakarta' });
+		error = '';
 		editing = true;
 		queueMicrotask(() => priceEl?.focus());
 	}
@@ -49,32 +61,46 @@
 		e.preventDefault();
 		const p = parseDigits(price);
 		const l = parseDigits(lot);
-		// both empty = remove; otherwise both required
-		if (!price && !lot) onsave(null);
-		else if (p > 0 && l > 0) onsave({ price: p, lot: l });
-		else {
-			(e.currentTarget.elements.namedItem(p > 0 ? 'lot' : 'price') as HTMLInputElement).focus();
+		if (!(p > 0 && l > 0) || !date) {
+			error = 'Enter price, lot and date.';
 			return;
 		}
-		editing = false;
-	}
-
-	function remove() {
-		onsave(null);
-		editing = false;
+		error = onadd({ date, symbol, side, price: p, lot: l }) ?? '';
+		if (!error) editing = false;
 	}
 </script>
 
 <div class="pos">
 	{#if editing}
 		<form onsubmit={submit}>
+			<div class="seg" role="group" aria-label="Side">
+				<button
+					type="button"
+					class="b"
+					aria-pressed={side === 'buy'}
+					onclick={() => (side = 'buy')}
+				>
+					Buy
+				</button>
+				<button
+					type="button"
+					class="s"
+					aria-pressed={side === 'sell'}
+					onclick={() => (side = 'sell')}
+				>
+					Sell
+				</button>
+			</div>
 			<label>
-				Buy price
+				Date
+				<input name="date" type="date" bind:value={date} />
+			</label>
+			<label>
+				Price
 				<input
 					name="price"
 					inputmode="numeric"
 					autocomplete="off"
-					placeholder={live ? fmt.format(live) : ''}
 					bind:this={priceEl}
 					value={price}
 					oninput={(e) => (price = group(e))}
@@ -86,23 +112,23 @@
 					name="lot"
 					inputmode="numeric"
 					autocomplete="off"
-					placeholder="10"
+					placeholder={side === 'sell' && held ? String(held.lot) : '10'}
 					value={lot}
 					oninput={(e) => (lot = group(e))}
 				/>
 			</label>
-			<div class="preview">
-				{#if draft}Cost {fmt.format(Math.round(draft.cost))} · BEP {fmt.format(draft.bep)}{/if}
-			</div>
+			<div class="preview" class:err={error}>{error || draft}</div>
 			<div class="actions">
-				{#if pos}<button type="button" class="clear" onclick={remove}>Remove</button>{/if}
 				<button type="button" onclick={() => (editing = false)}>Cancel</button>
-				<button class="save">Save</button>
+				<button class="save">Add trade</button>
 			</div>
 		</form>
-	{:else if pos}
-		<button class="held" aria-label="Edit {symbol} position" onclick={edit}>
-			<span><b>{fmt.format(pos.lot)}</b> lot @ <b>{fmt.format(pos.price)}</b></span>
+	{:else if held}
+		<button class="held" aria-label="Add {symbol} trade" onclick={edit}>
+			<span
+				><b>{fmt.format(held.lot)}</b> lot · avg
+				<b>{fmt.format(Math.round(held.cost / held.lot / 100))}</b></span
+			>
 			{#if calc}
 				<span>BEP <b>{fmt.format(calc.bep)}</b></span>
 				<span class="pl" class:up={calc.pl > 0} class:down={calc.pl < 0}>
@@ -111,7 +137,7 @@
 			{/if}
 		</button>
 	{:else}
-		<button class="add" onclick={edit}>+ position</button>
+		<button class="add" onclick={edit}>{holding ? 'No holding · + trade' : '+ trade'}</button>
 	{/if}
 </div>
 
@@ -205,6 +231,35 @@
 		font-size: 0.78rem;
 		min-height: 1.2em;
 	}
+	.preview.err {
+		color: var(--down);
+	}
+	.seg {
+		display: flex;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		overflow: hidden;
+		align-self: end;
+	}
+	.seg button {
+		flex: 1;
+		padding: 0.45rem 0;
+		background: none;
+		border: 0;
+		color: var(--muted);
+		font:
+			600 0.8rem Geist,
+			sans-serif;
+		cursor: pointer;
+	}
+	.seg .b[aria-pressed='true'] {
+		background: var(--up);
+		color: var(--board);
+	}
+	.seg .s[aria-pressed='true'] {
+		background: var(--down);
+		color: var(--board);
+	}
 	.actions {
 		grid-column: 1 / -1;
 		display: flex;
@@ -230,12 +285,6 @@
 		background: var(--text);
 		color: var(--board);
 		border-color: var(--text);
-	}
-	.actions .clear {
-		margin-right: auto;
-		border: 0;
-		padding-left: 0;
-		color: var(--down);
 	}
 	button:focus-visible {
 		outline: 2px solid var(--text);

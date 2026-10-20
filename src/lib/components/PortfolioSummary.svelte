@@ -5,15 +5,17 @@
 
 	let {
 		items,
+		realized,
 		fees,
 		onfees
 	}: {
 		items: { cost: number; value: number }[];
+		realized: number;
 		fees: Fees;
 		onfees: (fees: Fees) => void;
 	} = $props();
 
-	const t = $derived(sumPositions(items));
+	const unrealized = $derived(sumPositions(items).pl);
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
@@ -23,20 +25,14 @@
 </script>
 
 <section class="summary" aria-label="Portfolio">
-	<div>
-		<div class="lbl">Cost</div>
-		<div class="val">{fmt.format(Math.round(t.cost))}</div>
-	</div>
-	<div>
-		<div class="lbl">Value now</div>
-		<div class="val">{fmt.format(Math.round(t.value))}</div>
-	</div>
-	<div>
-		<div class="lbl">Net P/L</div>
-		<div class="val" class:up={t.pl > 0} class:down={t.pl < 0}>
-			{sgn(t.pl)}{fmt.format(Math.round(t.pl))} ({sgn(t.pl)}{t.pct.toFixed(2)}%)
+	{#each [['Realized', realized], ['Unrealized', unrealized], ['Total profit', realized + unrealized]] as const as [lbl, v], i (lbl)}
+		<div>
+			<div class="lbl">{lbl}</div>
+			<div class="val" class:total={i === 2} class:up={v > 0} class:down={v < 0}>
+				{sgn(v)}{fmt.format(Math.round(v))}
+			</div>
 		</div>
-	</div>
+	{/each}
 	<div class="fees">
 		Fees
 		<label>
@@ -85,6 +81,9 @@
 		font-size: 1.35rem;
 		font-weight: 500;
 	}
+	.val.total {
+		font-size: 1.6rem;
+	}
 	.up {
 		color: var(--up);
 	}
@@ -125,7 +124,8 @@
 			grid-template-columns: 1fr 1fr;
 			gap: 0.75rem 1rem;
 		}
-		.val {
+		.val,
+		.val.total {
 			font-size: 1.1rem;
 		}
 		.fees {

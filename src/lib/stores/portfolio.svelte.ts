@@ -1,23 +1,63 @@
-import type { Fees, Position } from '#lib/models/stock.ts';
+import type { Fees, Trade } from '#lib/models/stock.ts';
+import { ledger } from '#lib/utils/position.ts';
 import { load, save, type Storage } from '#lib/utils/storage.ts';
 
 const KEY = 'portfolio';
 
+type Saved = {
+	trades?: Trade[];
+	fees?: Fees;
+	/** pre-history format */
+	positions?: Record<string, { price: number; lot: number }>;
+};
+
 export class Portfolio {
-	positions = $state<Record<string, Position>>({});
+	trades = $state<Trade[]>([]);
 	fees = $state<Fees>({ buy: 0.15, sell: 0.25 });
+	#ledger = $derived(ledger(this.trades));
 
 	constructor(private storage: Storage | undefined) {
-		const saved = load(storage, KEY) as
-			{ positions?: Record<string, Position>; fees?: Fees } | undefined;
-		if (saved?.positions) this.positions = saved.positions;
+		const saved = load(storage, KEY) as Saved | undefined;
 		if (saved?.fees) this.fees = saved.fees;
+		if (saved?.trades) this.trades = saved.trades;
+		else if (saved?.positions) {
+			const date = new Intl.DateTimeFormat('sv', { timeZone: 'Asia/Jakarta' }).format();
+			this.trades = Object.entries(saved.positions).map(([symbol, p], i) => ({
+				id: i + 1,
+				date,
+				symbol,
+				side: 'buy',
+				price: p.price,
+				lot: p.lot,
+				fee: this.fees.buy
+			}));
+		}
 	}
 
-	setPosition(symbol: string, pos: Position | null) {
-		if (pos) this.positions[symbol] = pos;
-		else delete this.positions[symbol];
-		this.save();
+	get holdings() {
+		return this.#ledger.holdings;
+	}
+	get realized() {
+		return this.#ledger.realized;
+	}
+	get realizedById() {
+		return this.#ledger.realizedById;
+	}
+
+	/** error message, or undefined on success */
+	addTrade(t: Omit<Trade, 'id' | 'fee'>) {
+		const id = Math.max(0, ...this.trades.map((x) => x.id)) + 1;
+		return this.commit([...this.trades, { ...t, id, fee: this.fees[t.side] }]);
+	}
+
+	/** error message, or undefined on success; keeps the trade's original fee */
+	updateTrade(id: number, t: Omit<Trade, 'id' | 'fee'>) {
+		return this.commit(this.trades.map((x) => (x.id === id ? { ...x, ...t } : x)));
+	}
+
+	/** error message, or undefined on success */
+	removeTrade(id: number) {
+		return this.commit(this.trades.filter((t) => t.id !== id));
 	}
 
 	setFees(fees: Fees) {
@@ -25,7 +65,17 @@ export class Portfolio {
 		this.save();
 	}
 
+	private commit(trades: Trade[]) {
+		try {
+			ledger(trades);
+		} catch (e) {
+			return (e as Error).message;
+		}
+		this.trades = trades;
+		this.save();
+	}
+
 	private save() {
-		save(this.storage, KEY, { positions: this.positions, fees: this.fees });
+		save(this.storage, KEY, { trades: this.trades, fees: this.fees });
 	}
 }
