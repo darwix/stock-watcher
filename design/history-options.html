@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Trade history, phone</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			:root {
+				--bg: #0a0a0a;
+				--card: #141414;
+				--text: #e8e8e8;
+				--muted: #808080;
+				--line: #2a2a2a;
+				--up: #5bd68f;
+				--down: #ff7a63;
+				color-scheme: dark;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				padding: 2rem 1rem;
+				background: var(--bg);
+				color: var(--text);
+				font:
+					14px 'Geist Mono',
+					monospace;
+				font-variant-numeric: tabular-nums;
+				display: flex;
+				gap: 2rem;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+			.phone {
+				width: 375px;
+				padding: 1rem;
+				border: 1px solid var(--line);
+				border-radius: 24px;
+			}
+			.tag-opt {
+				font-weight: 600;
+				color: #f5b04b;
+				font-size: 0.75rem;
+				margin-bottom: 1rem;
+			}
+			.tag-opt span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			h2 {
+				margin: 0 0 0.75rem;
+				font-size: 0.72rem;
+				font-weight: 500;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+			}
+			.m {
+				color: var(--muted);
+			}
+			.up {
+				color: var(--up);
+			}
+			.down {
+				color: var(--down);
+			}
+			.side {
+				font-size: 0.65rem;
+				font-weight: 600;
+				padding: 0.05rem 0.35rem;
+				border: 1px solid;
+				border-radius: 4px;
+			}
+			.buy {
+				color: var(--up);
+			}
+			.sell {
+				color: var(--down);
+			}
+			.list {
+				border: 1px solid var(--line);
+				border-radius: 10px;
+			}
+
+			/* A ledger rows */
+			.a-row {
+				padding: 0.75rem 0.9rem;
+				border-top: 1px solid var(--line);
+			}
+			.a-row:first-child {
+				border-top: 0;
+			}
+			.a-l1,
+			.a-l2 {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.a-l1 b {
+				margin-left: 0.5rem;
+				font-weight: 600;
+			}
+			.a-l2 {
+				margin-top: 0.3rem;
+				font-size: 0.78rem;
+			}
+			.a-row.open {
+				background: var(--card);
+			}
+			.acts {
+				display: flex;
+				gap: 0.5rem;
+				margin-top: 0.6rem;
+			}
+			.acts button {
+				flex: 1;
+				padding: 0.45rem;
+				font: inherit;
+				font-size: 0.8rem;
+				color: var(--text);
+				background: none;
+				border: 1px solid var(--line);
+				border-radius: 6px;
+			}
+			.acts .del {
+				color: var(--down);
+			}
+
+			/* B timeline by day */
+			.day {
+				font-size: 0.72rem;
+				color: var(--muted);
+				margin: 1rem 0 0.4rem;
+			}
+			.day:first-of-type {
+				margin-top: 0;
+			}
+			.b-item {
+				display: grid;
+				grid-template-columns: 3px 1fr auto;
+				gap: 0.75rem;
+				padding: 0.6rem 0;
+			}
+			.b-item i {
+				border-radius: 2px;
+				background: var(--up);
+			}
+			.b-item i.s {
+				background: var(--down);
+			}
+			.b-item .sm {
+				font-size: 0.78rem;
+				margin-top: 0.2rem;
+			}
+			.b-item .r {
+				text-align: right;
+			}
+
+			.b-item.open {
+				background: var(--card);
+				border-radius: 8px 8px 0 0;
+				padding-inline: 0.5rem;
+			}
+			.b-acts {
+				margin-top: 0;
+				padding: 0 0.5rem 0.6rem 1.3rem;
+				background: var(--card);
+				border-radius: 0 0 8px 8px;
+			}
+			/* C grouped by stock */
+			.c-grp {
+				border-top: 1px solid var(--line);
+			}
+			.c-grp:first-child {
+				border-top: 0;
+			}
+			.c-head {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0.8rem 0.9rem;
+			}
+			.c-head b {
+				font-size: 1rem;
+			}
+			.c-head .sm {
+				font-size: 0.75rem;
+			}
+			.c-trades {
+				padding: 0 0.9rem 0.7rem;
+			}
+			.c-t {
+				display: grid;
+				grid-template-columns: 4.6rem 2.8rem 1fr auto;
+				gap: 0.5rem;
+				font-size: 0.78rem;
+				padding: 0.35rem 0;
+				border-top: 1px dashed var(--line);
+			}
+			.c-t span:last-child {
+				text-align: right;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="phone">
+			<div class="tag-opt">A · Ledger rows <span>— 2 lines each, tap to edit</span></div>
+			<h2>Trade history</h2>
+			<div class="list">
+				<div class="a-row">
+					<div class="a-l1">
+						<span><span class="side sell">SELL</span><b>TLKM</b></span>
+						<span class="up">+688.250</span>
+					</div>
+					<div class="a-l2 m"><span>10 lot @ 3.200 · 0,25%</span><span>10 Sep</span></div>
+				</div>
+				<div class="a-row open">
+					<div class="a-l1">
+						<span><span class="side buy">BUY</span><b>TLKM</b></span>
+						<span>5.007.500</span>
+					</div>
+					<div class="a-l2 m"><span>20 lot @ 2.500 · 0,15%</span><span>2 Sep</span></div>
+					<div class="acts"><button>✎ Edit</button><button class="del">Delete</button></div>
+				</div>
+				<div class="a-row">
+					<div class="a-l1">
+						<span><span class="side buy">BUY</span><b>BBCA</b></span>
+						<span>8.012.000</span>
+					</div>
+					<div class="a-l2 m"><span>10 lot @ 8.000 · 0,15%</span><span>1 Sep</span></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="phone">
+			<div class="tag-opt">
+				B · Timeline <span>— grouped by day, tap a trade to edit/delete</span>
+			</div>
+			<h2>Trade history</h2>
+			<div class="day">Wed 10 Sep 2026</div>
+			<div class="b-item">
+				<i class="s"></i>
+				<div>
+					<div><b>TLKM</b> <span class="m">sold</span></div>
+					<div class="sm m">10 lot @ 3.200</div>
+				</div>
+				<div class="r">
+					<div class="up">+688.250</div>
+					<div class="sm m">3.192.000</div>
+				</div>
+			</div>
+			<div class="day">Tue 2 Sep 2026</div>
+			<div class="b-item open">
+				<i></i>
+				<div>
+					<div><b>TLKM</b> <span class="m">bought</span></div>
+					<div class="sm m">20 lot @ 2.500</div>
+				</div>
+				<div class="r">
+					<div>5.007.500</div>
+					<div class="sm m">fee 0,15%</div>
+				</div>
+			</div>
+			<div class="acts b-acts"><button>✎ Edit</button><button class="del">Delete</button></div>
+			<div class="day">Mon 1 Sep 2026</div>
+			<div class="b-item">
+				<i></i>
+				<div>
+					<div><b>BBCA</b> <span class="m">bought</span></div>
+					<div class="sm m">10 lot @ 8.000</div>
+				</div>
+				<div class="r">
+					<div>8.012.000</div>
+					<div class="sm m">fee 0,15%</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="phone">
+			<div class="tag-opt">C · By stock <span>— one block per ticker, realized on top</span></div>
+			<h2>Trade history</h2>
+			<div class="list">
+				<div class="c-grp">
+					<div class="c-head">
+						<span><b>TLKM</b> <span class="sm m">2 trades</span></span>
+						<span class="up">+688.250</span>
+					</div>
+					<div class="c-trades">
+						<div class="c-t">
+							<span class="m">10 Sep</span><span class="sell">SELL</span><span>10 @ 3.200</span
+							><span>3.192.000</span>
+						</div>
+						<div class="c-t">
+							<span class="m">2 Sep</span><span class="buy">BUY</span><span>20 @ 2.500</span
+							><span>5.007.500</span>
+						</div>
+					</div>
+				</div>
+				<div class="c-grp">
+					<div class="c-head">
+						<span><b>BBCA</b> <span class="sm m">1 trade</span></span>
+						<span class="m">—</span>
+					</div>
+					<div class="c-trades">
+						<div class="c-t">
+							<span class="m">1 Sep</span><span class="buy">BUY</span><span>10 @ 8.000</span
+							><span>8.012.000</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

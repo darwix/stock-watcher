@@ -38,6 +38,17 @@
 		if (!error) draft = undefined;
 	}
 	const rows = $derived([...trades].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id));
+	// phone timeline: rows grouped by day, newest first (rows already sorted)
+	const days = $derived(Object.entries(Object.groupBy(rows, (t) => t.date)));
+	const dayFmt = new Intl.DateTimeFormat('en-GB', {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		timeZone: 'UTC'
+	});
+	/** timeline item showing its edit/delete actions */
+	let picked = $state<number>();
 	const amount = (t: Trade) =>
 		t.price * t.lot * 100 * (1 + ((t.side === 'buy' ? 1 : -1) * t.fee) / 100);
 </script>
@@ -109,6 +120,61 @@
 				{/each}
 			</tbody>
 		</table>
+	</div>
+	<div class="timeline">
+		{#each days as [day, ts] (day)}
+			<h3>{dayFmt.format(new Date(day))}</h3>
+			{#each ts ?? [] as t (t.id)}
+				{@const r = realizedById[t.id]}
+				<div class="item" class:open={picked === t.id || draft?.id === t.id}>
+					{#if draft?.id === t.id}
+						<div class="form">
+							<b>{t.symbol.replace('.JK', '')}</b>
+							<input type="date" aria-label="Date" bind:value={draft.date} />
+							<select aria-label="Side" bind:value={draft.side}>
+								<option value="buy">BUY</option>
+								<option value="sell">SELL</option>
+							</select>
+							<input inputmode="numeric" aria-label="Price" bind:value={draft.price} />
+							<input inputmode="numeric" aria-label="Lot" class="lot" bind:value={draft.lot} />
+						</div>
+						<div class="btns">
+							<button class="save" onclick={saveEdit}>Save</button>
+							<button onclick={() => ((draft = undefined), (error = ''))}>Cancel</button>
+						</div>
+					{:else}
+						<button
+							class="sum {t.side}"
+							aria-expanded={picked === t.id}
+							onclick={() => (picked = picked === t.id ? undefined : t.id)}
+						>
+							<span>
+								<b>{t.symbol.replace('.JK', '')}</b>
+								<span class="muted">{t.side === 'buy' ? 'bought' : 'sold'}</span>
+								<small class="muted">{fmt.format(t.lot)} lot @ {fmt.format(t.price)}</small>
+							</span>
+							<span class="r">
+								{#if r === undefined}
+									{fmt.format(Math.round(amount(t)))}
+									<small class="muted">fee {t.fee}%</small>
+								{:else}
+									<span class:up={r > 0} class:down={r < 0}
+										>{sgn(r)}{fmt.format(Math.round(r))}</span
+									>
+									<small class="muted">{fmt.format(Math.round(amount(t)))}</small>
+								{/if}
+							</span>
+						</button>
+						{#if picked === t.id}
+							<div class="btns">
+								<button onclick={() => edit(t)}>✎ Edit</button>
+								<button class="del" onclick={() => (error = onremove(t.id) ?? '')}>Delete</button>
+							</div>
+						{/if}
+					{/if}
+				</div>
+			{/each}
+		{/each}
 	</div>
 </section>
 
@@ -214,6 +280,88 @@
 		border: 1px solid var(--line);
 		border-radius: 6px;
 		text-align: inherit;
+	}
+	.timeline {
+		display: none;
+		font:
+			0.9rem 'Geist Mono',
+			monospace;
+		font-variant-numeric: tabular-nums;
+	}
+	h3 {
+		margin: 1rem 0 0.3rem;
+		font-size: 0.72rem;
+		font-weight: 400;
+		color: var(--muted);
+	}
+	h3:first-child {
+		margin-top: 0;
+	}
+	.item {
+		border-radius: 8px;
+	}
+	.item.open {
+		background: var(--card);
+	}
+	.timeline button {
+		font: inherit;
+		color: var(--text);
+	}
+	.sum {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.6rem 0.5rem 0.6rem 0.9rem;
+		text-align: left;
+		/* side rail */
+		border-left: 3px solid currentColor;
+		border-radius: 2px;
+	}
+	.sum.buy {
+		border-left-color: var(--up);
+	}
+	.sum.sell {
+		border-left-color: var(--down);
+	}
+	.sum small {
+		display: block;
+		margin-top: 0.2rem;
+		font-size: 0.78rem;
+	}
+	.sum .r {
+		text-align: right;
+	}
+	.btns {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0 0.5rem 0.6rem 0.9rem;
+	}
+	.timeline .btns button {
+		flex: 1;
+		margin: 0;
+		padding: 0.45rem;
+		font-size: 0.8rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+	}
+	.timeline .btns .del {
+		color: var(--down);
+	}
+	.form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 0.5rem 0.6rem 0.9rem;
+	}
+	@media (max-width: 720px) {
+		.card {
+			display: none;
+		}
+		.timeline {
+			display: block;
+		}
 	}
 	input[type='date'] {
 		width: 8.5rem;

@@ -218,13 +218,10 @@
 		color: var(--up);
 	}
 	.board {
-		margin-top: 1rem;
-		background: var(--board);
-		border-radius: 14px;
-		padding: 6px;
+		margin-top: 0.75rem;
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 6px;
+		gap: 0.75rem;
 	}
 	.box {
 		position: relative;
