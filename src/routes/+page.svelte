@@ -6,6 +6,7 @@
 	import { Watchlist } from '#lib/stores/watchlist.svelte.ts';
 	import { Portfolio } from '#lib/stores/portfolio.svelte.ts';
 	import { calcPosition } from '#lib/utils/position.ts';
+	import { fmt } from '#lib/utils/number.ts';
 	import { isMarketOpen } from '#lib/utils/market.ts';
 	import type { Quote, QuoteResult } from '#lib/models/stock.ts';
 
@@ -66,7 +67,6 @@
 			.map((s) => calcPosition(positions[s], quotes[s].price, fees));
 	});
 
-	const fmt = new Intl.NumberFormat('id-ID');
 	const time = new Intl.DateTimeFormat('id-ID', {
 		timeStyle: 'medium',
 		timeZone: 'Asia/Jakarta'

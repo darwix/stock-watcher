@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Fees } from '#lib/models/stock.ts';
 	import { sumPositions } from '#lib/utils/position.ts';
+	import { fmt, sgn } from '#lib/utils/number.ts';
 
 	let {
 		items,
@@ -12,9 +13,7 @@
 		onfees: (fees: Fees) => void;
 	} = $props();
 
-	const fmt = new Intl.NumberFormat('id-ID');
 	const t = $derived(sumPositions(items));
-	const sgn = $derived(t.pl > 0 ? '+' : '');
 
 	// accepts "0,15" or "0.15"
 	function setFee(key: keyof Fees, e: Event & { currentTarget: HTMLInputElement }) {
@@ -35,7 +34,7 @@
 	<div>
 		<div class="lbl">Net P/L</div>
 		<div class="val" class:up={t.pl > 0} class:down={t.pl < 0}>
-			{sgn}{fmt.format(Math.round(t.pl))} ({sgn}{t.pct.toFixed(2)}%)
+			{sgn(t.pl)}{fmt.format(Math.round(t.pl))} ({sgn(t.pl)}{t.pct.toFixed(2)}%)
 		</div>
 	</div>
 	<div class="fees">

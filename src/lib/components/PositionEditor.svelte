@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Fees, Position } from '#lib/models/stock.ts';
 	import { calcPosition } from '#lib/utils/position.ts';
-	import { groupDigits, parseDigits } from '#lib/utils/number.ts';
+	import { fmt, groupDigits, parseDigits, sgn } from '#lib/utils/number.ts';
 
 	let {
 		symbol,
@@ -16,9 +16,6 @@
 		fees: Fees;
 		onsave: (pos: Position | null) => void;
 	} = $props();
-
-	const fmt = new Intl.NumberFormat('id-ID');
-	const sgn = (n: number) => (n > 0 ? '+' : '');
 
 	let editing = $state(false);
 	let price = $state('');

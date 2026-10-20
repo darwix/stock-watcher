@@ -1,4 +1,5 @@
-const fmt = new Intl.NumberFormat('id-ID');
+export const fmt = new Intl.NumberFormat('id-ID');
+export const sgn = (n: number) => (n > 0 ? '+' : '');
 
 /** "12.500" -> 12500; non-digits ignored */
 export const parseDigits = (v: string) => +v.replace(/\D/g, '');
