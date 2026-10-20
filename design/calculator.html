@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Position calculator mock</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			:root {
+				--bg: #0e0f11;
+				--board: #0b0c0d;
+				--card: #131517;
+				--card-2: #1a1d20;
+				--text: #d9d6cf;
+				--muted: #7d7a74;
+				--line: #272a2f;
+				--up: #5bd68f;
+				--down: #ff7a63;
+				color-scheme: dark;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				background: var(--bg);
+				color: var(--text);
+				font-family: Geist, system-ui, sans-serif;
+			}
+			.mono {
+				font-family: 'Geist Mono', ui-monospace, monospace;
+				font-variant-numeric: tabular-nums;
+			}
+			main {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 2rem 1rem 4rem;
+			}
+			header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 1.25rem;
+			}
+			h1 {
+				margin: 0;
+				font-size: 1.6rem;
+				font-weight: 600;
+				letter-spacing: -0.02em;
+				color: #ecebe8;
+			}
+			.badge {
+				font:
+					500 0.8rem 'Geist Mono',
+					monospace;
+				padding: 0.25rem 0.7rem;
+				border-radius: 6px;
+				background: var(--card);
+				color: var(--up);
+			}
+			.search {
+				width: 100%;
+				padding: 0.6rem 0.8rem;
+				font: inherit;
+				border: 1px solid var(--line);
+				border-radius: 6px;
+				background: var(--card);
+				color: var(--muted);
+			}
+			.up {
+				color: var(--up);
+			}
+			.down {
+				color: var(--down);
+			}
+
+			/* summary strip */
+			.summary {
+				margin-top: 1rem;
+				display: grid;
+				grid-template-columns: repeat(3, auto) 1fr;
+				gap: 0.5rem 2.5rem;
+				align-items: end;
+				padding: 1rem 1.2rem;
+				background: var(--card);
+				border-radius: 10px;
+			}
+			.summary .lbl {
+				font-size: 0.72rem;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				margin-bottom: 0.2rem;
+			}
+			.summary .val {
+				font-size: 1.35rem;
+				font-weight: 500;
+			}
+			.fees {
+				justify-self: end;
+				font-size: 0.8rem;
+				color: var(--muted);
+				display: flex;
+				gap: 0.4rem;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+			.fees label {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.35rem;
+				font-size: 0.8rem;
+				text-transform: none;
+				letter-spacing: 0;
+			}
+			.fees input {
+				width: 5rem;
+				padding: 0.3rem 0.45rem;
+				font-size: 0.85rem;
+			}
+			@media (max-width: 720px) {
+				.summary {
+					grid-template-columns: 1fr 1fr;
+				}
+				.fees {
+					justify-self: start;
+					grid-column: 1 / -1;
+				}
+			}
+
+			/* board */
+			.board {
+				margin-top: 1rem;
+				background: var(--board);
+				border-radius: 14px;
+				padding: 6px;
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+				gap: 6px;
+			}
+			.box {
+				position: relative;
+				background: var(--card);
+				border-radius: 8px;
+				padding: 1rem 1.1rem;
+				font-family: 'Geist Mono', ui-monospace, monospace;
+				font-variant-numeric: tabular-nums;
+				display: flex;
+				flex-direction: column;
+			}
+			.row {
+				display: flex;
+				justify-content: space-between;
+				font-size: 0.8rem;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+			}
+			.tk {
+				color: var(--text);
+				font-weight: 600;
+			}
+			.px {
+				font-size: clamp(2.8rem, 7vw, 4rem);
+				font-weight: 500;
+				letter-spacing: -0.04em;
+				line-height: 1.1;
+				margin: 0.6rem 0 0.2rem;
+			}
+			.ch {
+				font-size: 0.95rem;
+			}
+			@keyframes flash-up {
+				from {
+					background: #5bd68f33;
+				}
+			}
+			@keyframes flash-down {
+				from {
+					background: #ff7a6333;
+				}
+			}
+			.flash-up {
+				animation: flash-up 1.2s ease-out;
+			}
+			.flash-down {
+				animation: flash-down 1.2s ease-out;
+			}
+
+			/* position area */
+			.pos {
+				margin-top: 0.9rem;
+				padding-top: 0.8rem;
+				border-top: 1px dashed var(--line);
+				font-size: 0.82rem;
+			}
+			.add {
+				background: none;
+				border: 0;
+				padding: 0.2rem 0;
+				color: var(--muted);
+				font: inherit;
+				cursor: pointer;
+				transition: color 0.2s;
+			}
+			.add:hover {
+				color: var(--text);
+			}
+			.held {
+				display: grid;
+				grid-template-columns: 1fr auto;
+				gap: 0.25rem 1rem;
+				width: 100%;
+				text-align: left;
+				background: none;
+				border: 0;
+				border-radius: 6px;
+				margin: -0.4rem;
+				padding: 0.4rem;
+				width: calc(100% + 0.8rem);
+				font: inherit;
+				color: var(--muted);
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.held:hover {
+				background: var(--card-2);
+			}
+			.held .pl {
+				grid-column: 1 / -1;
+				font-size: 1.15rem;
+				font-weight: 500;
+			}
+			.held b {
+				color: var(--text);
+				font-weight: 500;
+			}
+			form {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 0.5rem;
+			}
+			label {
+				display: grid;
+				gap: 0.25rem;
+				font-size: 0.7rem;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+			}
+			input {
+				width: 100%;
+				padding: 0.45rem 0.55rem;
+				font:
+					500 0.95rem 'Geist Mono',
+					monospace;
+				color: var(--text);
+				background: var(--board);
+				border: 1px solid var(--line);
+				border-radius: 6px;
+				transition: border-color 0.2s;
+			}
+			input:focus-visible {
+				outline: none;
+				border-color: var(--muted);
+			}
+			.preview {
+				grid-column: 1 / -1;
+				color: var(--muted);
+				font-size: 0.78rem;
+				min-height: 1.2em;
+			}
+			.actions {
+				grid-column: 1 / -1;
+				display: flex;
+				gap: 0.5rem;
+				justify-content: flex-end;
+			}
+			.actions button {
+				padding: 0.4rem 0.8rem;
+				border-radius: 6px;
+				font:
+					500 0.8rem Geist,
+					sans-serif;
+				cursor: pointer;
+				border: 1px solid var(--line);
+				background: none;
+				color: var(--muted);
+				transition:
+					background 0.2s,
+					transform 0.1s;
+			}
+			.actions button:active {
+				transform: translateY(1px);
+			}
+			.actions .save {
+				background: var(--text);
+				color: var(--board);
+				border-color: var(--text);
+			}
+			.actions .clear {
+				margin-right: auto;
+				border: 0;
+				color: var(--down);
+				padding-left: 0;
+			}
+			button:focus-visible {
+				outline: 2px solid var(--text);
+				outline-offset: 2px;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<header>
+				<h1>IDX watchlist</h1>
+				<span class="badge">● Live · 15s</span>
+			</header>
+			<input class="search" placeholder="Add stock: BBCA, Telkom…" aria-label="Search IDX stocks" />
+			<section class="summary mono" id="summary" aria-label="Portfolio"></section>
+			<section class="board" id="board" aria-label="Watchlist"></section>
+		</main>
+
+		<script>
+			// mock data: three states visible on load — no position, form open, with position
+			const stocks = [
+				{ tk: 'BBCA', px: 4990, prev: 4820, pos: null },
+				{ tk: 'TLKM', px: 1990, prev: 1770, pos: null, editing: true },
+				{ tk: 'BBRI', px: 3870, prev: 3910, pos: { price: 3650, lot: 20 } },
+				{ tk: 'ASII', px: 5125, prev: 5100, pos: { price: 5400, lot: 8 } },
+				{ tk: 'GOTO', px: 68, prev: 71, pos: null },
+				{ tk: 'ANTM', px: 2840, prev: 2960, pos: { price: 2500, lot: 50 } }
+			];
+			const fees = { buy: 0.15, sell: 0.25 };
+
+			const fmt = new Intl.NumberFormat('id-ID');
+			const sgn = (n) => (n > 0 ? '+' : '');
+			const cls = (n) => (n > 0 ? 'up' : n < 0 ? 'down' : '');
+			const time = () =>
+				new Intl.DateTimeFormat('id-ID', { timeStyle: 'medium', timeZone: 'Asia/Jakarta' }).format(
+					new Date()
+				);
+
+			// IDX price fractions
+			const tick = (p) => (p < 200 ? 1 : p < 500 ? 2 : p < 2000 ? 5 : p < 5000 ? 10 : 25);
+			function ceilTick(p) {
+				let t = tick(p);
+				let r = Math.ceil(p / t) * t;
+				return tick(r) === t ? r : Math.ceil(p / tick(r)) * tick(r);
+			}
+
+			function calc(pos, live) {
+				const shares = pos.lot * 100;
+				const cost = pos.price * shares * (1 + fees.buy / 100);
+				const value = live * shares * (1 - fees.sell / 100);
+				const pl = value - cost;
+				return {
+					cost,
+					value,
+					pl,
+					pct: (pl / cost) * 100,
+					bep: ceilTick(cost / (shares * (1 - fees.sell / 100)))
+				};
+			}
+
+			function head(s) {
+				const ch = s.px - s.prev;
+				const arrow = ch > 0 ? '▲' : ch < 0 ? '▼' : '';
+				return `
+					<div class="row"><span class="tk">${s.tk}</span><span>${time()}</span></div>
+					<div class="px ${cls(ch)}">${fmt.format(s.px)}</div>
+					<div class="ch ${cls(ch)}">${arrow} ${sgn(ch)}${fmt.format(ch)} (${sgn(ch)}${((ch / s.prev) * 100).toFixed(2)}%)</div>`;
+			}
+
+			function posArea(s, i) {
+				if (s.editing)
+					return `
+					<form data-i="${i}">
+						<label>Buy price<input name="price" inputmode="numeric" autocomplete="off" value="${s.pos ? fmt.format(s.pos.price) : ''}" placeholder="${fmt.format(s.px)}" /></label>
+						<label>Lot<input name="lot" inputmode="numeric" autocomplete="off" value="${s.pos ? fmt.format(s.pos.lot) : ''}" placeholder="10" /></label>
+						<div class="preview"></div>
+						<div class="actions">
+							${s.pos ? '<button type="button" class="clear">Remove</button>' : ''}
+							<button type="button" class="cancel">Cancel</button>
+							<button class="save">Save</button>
+						</div>
+					</form>`;
+				if (!s.pos) return `<button class="add" data-i="${i}">+ position</button>`;
+				const c = calc(s.pos, s.px);
+				return `
+					<button class="held" data-i="${i}" aria-label="Edit ${s.tk} position">
+						<span><b>${fmt.format(s.pos.lot)}</b> lot @ <b>${fmt.format(s.pos.price)}</b></span>
+						<span>BEP <b>${fmt.format(c.bep)}</b></span>
+						<span class="pl ${cls(c.pl)}">${sgn(c.pl)}${fmt.format(Math.round(c.pl))} (${sgn(c.pl)}${c.pct.toFixed(2)}%)</span>
+					</button>`;
+			}
+
+			function renderBox(s, i, flash = '') {
+				return `<article class="box ${flash}" data-i="${i}">${head(s)}<div class="pos">${posArea(s, i)}</div></article>`;
+			}
+
+			function renderSummary() {
+				const held = stocks.filter((s) => s.pos);
+				const el = document.getElementById('summary');
+				el.hidden = !held.length;
+				if (!held.length) return;
+				const t = held.reduce(
+					(a, s) => {
+						const c = calc(s.pos, s.px);
+						return { cost: a.cost + c.cost, value: a.value + c.value };
+					},
+					{ cost: 0, value: 0 }
+				);
+				const pl = t.value - t.cost;
+				const fe = document.activeElement?.closest?.('.fees');
+				const feesHtml = `
+					<div class="fees">Fees
+						<label>buy <input id="fb" type="number" step="0.01" min="0" value="${fees.buy}" />%</label>
+						·
+						<label>sell <input id="fs" type="number" step="0.01" min="0" value="${fees.sell}" />%</label>
+					</div>`;
+				const stats = `
+					<div><div class="lbl">Cost</div><div class="val">${fmt.format(Math.round(t.cost))}</div></div>
+					<div><div class="lbl">Value now</div><div class="val">${fmt.format(Math.round(t.value))}</div></div>
+					<div><div class="lbl">Net P/L</div><div class="val ${cls(pl)}">${sgn(pl)}${fmt.format(Math.round(pl))} (${sgn(pl)}${((pl / t.cost) * 100).toFixed(2)}%)</div></div>`;
+				// keep fee inputs alive while typing in them
+				if (fe) {
+					[...el.children].slice(0, 3).forEach((n) => n.remove());
+					el.insertAdjacentHTML('afterbegin', stats);
+				} else el.innerHTML = stats + feesHtml;
+			}
+
+			function render(flash = {}) {
+				const board = document.getElementById('board');
+				stocks.forEach((s, i) => {
+					const old = board.children[i];
+					if (old && s.editing) {
+						// don't wipe a form being typed in; refresh only the price header
+						old.querySelectorAll('.row, .px, .ch').forEach((n) => n.remove());
+						old.insertAdjacentHTML('afterbegin', head(s));
+						return;
+					}
+					const html = renderBox(s, i, flash[s.tk] ?? '');
+					if (old) old.outerHTML = html;
+					else board.insertAdjacentHTML('beforeend', html);
+				});
+				while (board.children.length > stocks.length) board.lastChild.remove();
+				renderSummary();
+			}
+
+			// "1.250" -> 1250; anything non-digit is ignored
+			const num = (v) => +v.replace(/\D/g, '');
+
+			// reformat with thousands dots, keeping the caret after the same digit
+			function group(input) {
+				const before = input.value.slice(0, input.selectionStart).replace(/\D/g, '').length;
+				const d = input.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+				input.value = d ? fmt.format(+d) : '';
+				let pos = 0;
+				for (let seen = 0; pos < input.value.length && seen < before; pos++)
+					if (/\d/.test(input.value[pos])) seen++;
+				input.setSelectionRange(pos, pos);
+			}
+
+			function preview(form) {
+				const s = stocks[form.dataset.i];
+				const price = num(form.price.value),
+					lot = num(form.lot.value);
+				form.querySelector('.preview').textContent =
+					price > 0 && lot > 0
+						? (() => {
+								const c = calc({ price, lot }, s.px);
+								return `Cost ${fmt.format(Math.round(c.cost))} · BEP ${fmt.format(c.bep)}`;
+							})()
+						: '';
+			}
+
+			const board = document.getElementById('board');
+			board.addEventListener('click', (e) => {
+				const t = e.target.closest('button');
+				if (!t) return;
+				const box = t.closest('.box');
+				const s = stocks[box.dataset.i];
+				if (t.matches('.add, .held')) s.editing = true;
+				else if (t.matches('.cancel')) s.editing = false;
+				else if (t.matches('.clear')) ((s.pos = null), (s.editing = false));
+				else return;
+				box.outerHTML = renderBox(s, box.dataset.i);
+				board.children[box.dataset.i].querySelector('input')?.focus();
+				renderSummary();
+			});
+			board.addEventListener('input', (e) => {
+				if (!e.target.form) return;
+				group(e.target);
+				preview(e.target.form);
+			});
+			board.addEventListener('submit', (e) => {
+				e.preventDefault();
+				const f = e.target;
+				const s = stocks[f.dataset.i];
+				const price = num(f.price.value),
+					lot = num(f.lot.value);
+				// both empty = remove; otherwise both required
+				if (!f.price.value && !f.lot.value) s.pos = null;
+				else if (price > 0 && lot > 0) s.pos = { price, lot };
+				else return (price > 0 ? f.lot : f.price).focus();
+				s.editing = false;
+				f.closest('.box').outerHTML = renderBox(s, f.dataset.i);
+				renderSummary();
+			});
+			document.getElementById('summary').addEventListener('input', (e) => {
+				const v = parseFloat(e.target.value);
+				if (!(v >= 0)) return;
+				fees[e.target.id === 'fb' ? 'buy' : 'sell'] = v;
+				render();
+			});
+
+			render();
+			document.querySelectorAll('form').forEach(preview);
+			setInterval(() => {
+				const flash = {};
+				for (const s of stocks) {
+					if (Math.random() < 0.6) continue;
+					const d = (Math.random() < 0.5 ? -1 : 1) * tick(s.px);
+					s.px += d;
+					flash[s.tk] = d > 0 ? 'flash-up' : 'flash-down';
+				}
+				render(flash);
+			}, 3000);
+		</script>
+	</body>
+</html>
