@@ -92,10 +92,6 @@
 				</button>
 			</div>
 			<label>
-				Date
-				<input name="date" type="date" bind:value={date} />
-			</label>
-			<label>
 				Price
 				<input
 					name="price"
@@ -116,6 +112,10 @@
 					value={lot}
 					oninput={(e) => (lot = group(e))}
 				/>
+			</label>
+			<label class="full">
+				Date
+				<input name="date" type="date" bind:value={date} />
 			</label>
 			<div class="preview" class:err={error}>{error || draft}</div>
 			<div class="actions">
@@ -233,6 +233,10 @@
 	}
 	.preview.err {
 		color: var(--down);
+	}
+	.seg,
+	.full {
+		grid-column: 1 / -1;
 	}
 	.seg {
 		display: flex;
