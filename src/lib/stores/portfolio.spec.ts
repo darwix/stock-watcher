@@ -43,6 +43,24 @@ describe('Portfolio', () => {
 		expect(p.trades).toHaveLength(1);
 	});
 
+	it('edits a trade in place, keeping its fee, and rejects oversell edits', () => {
+		const p = new Portfolio(memoryStorage());
+		const base = { symbol: 'A', price: 1000 };
+		p.addTrade({ ...base, date: '2026-10-01', side: 'buy', lot: 5 });
+		p.addTrade({ ...base, date: '2026-10-02', side: 'sell', lot: 5 });
+		p.setFees({ buy: 0.5, sell: 0.5 });
+		const [buy] = p.trades;
+		expect(
+			p.updateTrade(buy.id, { ...base, date: '2026-10-01', side: 'buy', lot: 8, price: 900 })
+		).toBeUndefined();
+		expect(p.trades[0]).toMatchObject({ id: buy.id, lot: 8, price: 900, fee: 0.15 });
+		expect(p.holdings.A.lot).toBe(3);
+		expect(p.updateTrade(buy.id, { ...base, date: '2026-10-01', side: 'buy', lot: 4 })).toMatch(
+			/4 lot/
+		);
+		expect(p.trades[0].lot).toBe(8);
+	});
+
 	it('migrates old positions into buy trades', () => {
 		const old = JSON.stringify({
 			positions: { 'BBRI.JK': { price: 3650, lot: 20 } },
