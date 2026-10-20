@@ -129,7 +129,9 @@
 <main>
 	<header>
 		<h1>IDX</h1>
-		<div class="grow"><StockSearch onpick={add} /></div>
+		<div class="grow">
+			{#if watchlist}<StockSearch onpick={add} />{:else}<div class="sk sk-search"></div>{/if}
+		</div>
 		<span class="badge" class:live={open}>{open ? '● Live' : 'Closed'}</span>
 		{#if user}
 			<button class="acct" onclick={signOut} title="Signed in as {user.name}">Sign out</button>
@@ -209,6 +211,10 @@
 			<div class="sk sk-strip"></div>
 			<div class="board">
 				{#each { length: 3 }, i (i)}<div class="sk sk-box"></div>{/each}
+			</div>
+			<div class="sk sk-h"></div>
+			<div class="sk-rows">
+				{#each { length: 3 }, i (i)}<div class="sk sk-row"></div>{/each}
 			</div>
 		</div>
 	{/if}
@@ -429,6 +435,28 @@
 	}
 	.sk-box {
 		height: 12rem;
+	}
+	.sk-search {
+		height: 2.3rem;
+		border-radius: 6px;
+	}
+	/* trade history */
+	.sk-h {
+		width: 8rem;
+		height: 0.8rem;
+		margin: 1.8rem 0 0.7rem;
+		border-radius: 4px;
+	}
+	.sk-rows {
+		display: grid;
+		gap: 1px;
+		padding: 1px;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+	}
+	.sk-row {
+		height: 2.6rem;
+		border-radius: 6px;
 	}
 	.sk-px {
 		display: block;
