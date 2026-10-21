@@ -76,7 +76,7 @@
 	</section>
 
 	{#if result}
-		<section class="card">
+		<section class="card rows">
 			<table>
 				<thead>
 					<tr>
@@ -106,10 +106,10 @@
 					{/each}
 				</tbody>
 			</table>
-			<p class="note">
-				Prices snapped to IDX tick size. Profit and return are net of buy and sell fees.
-			</p>
 		</section>
+		<p class="note">
+			Prices snapped to IDX tick size. Profit and return are net of buy and sell fees.
+		</p>
 	{/if}
 </main>
 
@@ -182,23 +182,36 @@
 		color: var(--text);
 		font-weight: 500;
 	}
+	.rows {
+		padding: 0;
+		overflow-x: auto;
+		background: none;
+	}
 	table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 	}
 	th {
 		text-align: right;
+		padding: 0.6rem 1rem;
+		font-size: 0.7rem;
 		font-weight: 500;
-		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 		color: var(--muted);
-		padding: 0 0.5rem 0.6rem;
 		border-bottom: 1px solid var(--line);
 	}
 	td {
 		text-align: right;
-		padding: 0.6rem 0.5rem;
+		padding: 0.65rem 1rem;
 		border-bottom: 1px solid var(--line);
+	}
+	tbody tr:hover td {
+		background: var(--card);
+	}
+	tr:last-child td {
+		border-bottom: 0;
 	}
 	th:first-child,
 	td:first-child {
@@ -233,7 +246,7 @@
 	.note {
 		font-size: 0.75rem;
 		color: var(--muted);
-		margin: 0.75rem 0 0;
+		margin: 0 0 1rem;
 	}
 	@media (max-width: 560px) {
 		.inputs {
