@@ -98,7 +98,7 @@ describe('ledger', () => {
 
 describe('sellScenarios', () => {
 	const fees = { buy: 0.15, sell: 0.25 };
-	const rows = sellScenarios(8750, 20, 9400, fees);
+	const { rows } = sellScenarios(8750, 20, 9400, fees);
 	const by = (kind: string) => rows.find((r) => r.kind === kind)!;
 
 	it('snaps ladder prices to the IDX tick', () => {
@@ -119,7 +119,7 @@ describe('sellScenarios', () => {
 	});
 
 	it('sorts by price, highest first, and omits an empty target', () => {
-		const r = sellScenarios(8750, 20, 0, fees);
+		const r = sellScenarios(8750, 20, 0, fees).rows;
 		expect(r.some((x) => x.kind === 'target')).toBe(false);
 		expect(r.map((x) => x.price)).toEqual([...r.map((x) => x.price)].sort((a, b) => b - a));
 	});

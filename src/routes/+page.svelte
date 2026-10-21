@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import StockSearch from '#lib/components/StockSearch.svelte';
 	import PositionEditor from '#lib/components/PositionEditor.svelte';
 	import PortfolioSummary from '#lib/components/PortfolioSummary.svelte';
@@ -132,6 +133,7 @@
 		<div class="grow">
 			{#if watchlist}<StockSearch onpick={add} />{:else}<div class="sk sk-search"></div>{/if}
 		</div>
+		<a class="acct" href={resolve('/calculator')}>Calculator</a>
 		<span class="badge" class:live={open}>{open ? '● Live' : 'Closed'}</span>
 		{#if user}
 			<button class="acct" onclick={signOut} title="Signed in as {user.name}">Sign out</button>
@@ -230,23 +232,6 @@
 </main>
 
 <style>
-	:global(:root) {
-		--bg: #0a0a0a;
-		--board: #000;
-		--card: #141414;
-		--text: #e8e8e8;
-		--muted: #808080;
-		--line: #2a2a2a;
-		--up: #5bd68f;
-		--down: #ff7a63;
-		color-scheme: dark;
-	}
-	:global(body) {
-		margin: 0;
-		background: var(--bg);
-		color: var(--text);
-		font-family: Geist, system-ui, sans-serif;
-	}
 	:global(.muted) {
 		color: var(--muted);
 		font-size: 0.85em;
@@ -266,6 +251,7 @@
 		border-radius: 10px;
 	}
 	.acct {
+		text-decoration: none;
 		padding: 0.3rem 0.7rem;
 		font:
 			500 0.8rem Geist,

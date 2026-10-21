@@ -1,4 +1,4 @@
-import type { Holding, Trade } from '#lib/models/stock.ts';
+import type { Fees, Holding, Trade } from '#lib/models/stock.ts';
 
 const SHARES_PER_LOT = 100;
 
@@ -44,4 +44,31 @@ export function ledger(trades: Trade[]) {
 		realizedById[t.id] = r;
 	}
 	return { holdings, realized, realizedById };
+}
+
+const LADDER = [-10, -5, -2, 0, 2, 5, 10, 20];
+
+/** net result of selling `lot` bought at `buy` across a % ladder, break-even and a target price */
+export function sellScenarios(buy: number, lot: number, target: number, fees: Fees) {
+	const shares = lot * SHARES_PER_LOT;
+	const cost = buy * shares * (1 + fees.buy / 100);
+	const row = (price: number, kind: 'ladder' | 'be' | 'target') => {
+		const gross = price * shares;
+		const profit = gross * (1 - fees.sell / 100) - cost;
+		return {
+			price,
+			kind,
+			change: (price / buy - 1) * 100,
+			gross,
+			profit,
+			pct: (profit / cost) * 100
+		};
+	};
+	const rows = LADDER.map((p) => {
+		const raw = buy * (1 + p / 100);
+		return row(Math.round(raw / tick(raw)) * tick(raw), 'ladder');
+	});
+	rows.push(row(calcPosition({ lot, cost }, buy, fees.sell).bep, 'be'));
+	if (target > 0) rows.push(row(target, 'target'));
+	return { cost, rows: rows.sort((a, b) => b.price - a.price) };
 }

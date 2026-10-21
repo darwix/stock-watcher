@@ -39,3 +39,23 @@
 </svelte:head>
 
 {@render children()}
+
+<style>
+	:global(:root) {
+		--bg: #0a0a0a;
+		--board: #000;
+		--card: #141414;
+		--text: #e8e8e8;
+		--muted: #808080;
+		--line: #2a2a2a;
+		--up: #5bd68f;
+		--down: #ff7a63;
+		color-scheme: dark;
+	}
+	:global(body) {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font-family: Geist, system-ui, sans-serif;
+	}
+</style>
