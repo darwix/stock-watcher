@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ceilTick, calcPosition, ledger } from './position';
+import { ceilTick, calcPosition, ledger, sellScenarios } from './position';
 import type { Trade } from '#lib/models/stock.ts';
 
 let id = 0;
@@ -93,5 +93,34 @@ describe('ledger', () => {
 			ledger([t('buy', 1000, 5, '2026-10-02'), t('sell', 1000, 5, '2026-10-01')])
 		).toThrow();
 		expect(() => ledger([t('buy', 1000, 5), t('sell', 1000, 6, '2026-10-02')])).toThrow();
+	});
+});
+
+describe('sellScenarios', () => {
+	const fees = { buy: 0.15, sell: 0.25 };
+	const rows = sellScenarios(8750, 20, 9400, fees);
+	const by = (kind: string) => rows.find((r) => r.kind === kind)!;
+
+	it('snaps ladder prices to the IDX tick', () => {
+		expect(rows.filter((r) => r.kind === 'ladder').map((r) => r.price)).toEqual([
+			10500, 9625, 9200, 8925, 8750, 8575, 8325, 7875
+		]);
+	});
+
+	it('marks the lowest tick price that does not lose money', () => {
+		expect(by('be').price).toBe(8800);
+		expect(by('be').profit).toBeCloseTo(29750);
+	});
+
+	it('nets both fees out of the target row', () => {
+		expect(by('target')).toMatchObject({ price: 9400, gross: 18_800_000 });
+		expect(by('target').profit).toBeCloseTo(1_226_750);
+		expect(by('target').pct).toBeCloseTo(7.0, 2);
+	});
+
+	it('sorts by price, highest first, and omits an empty target', () => {
+		const r = sellScenarios(8750, 20, 0, fees);
+		expect(r.some((x) => x.kind === 'target')).toBe(false);
+		expect(r.map((x) => x.price)).toEqual([...r.map((x) => x.price)].sort((a, b) => b - a));
 	});
 });
