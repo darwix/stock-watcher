@@ -44,9 +44,13 @@ export class Portfolio {
 		return this.commit([...this.trades, { ...t, id, fee: this.fees[t.side] }]);
 	}
 
-	/** error message, or undefined on success; keeps the trade's original fee */
+	/** error message, or undefined on success; keeps the original fee unless the side changes */
 	updateTrade(id: number, t: Omit<Trade, 'id' | 'fee'>) {
-		return this.commit(this.trades.map((x) => (x.id === id ? { ...x, ...t } : x)));
+		return this.commit(
+			this.trades.map((x) =>
+				x.id === id ? { ...x, ...t, fee: x.side === t.side ? x.fee : this.fees[t.side] } : x
+			)
+		);
 	}
 
 	/** error message, or undefined on success */

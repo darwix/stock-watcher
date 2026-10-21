@@ -61,6 +61,16 @@ describe('Portfolio', () => {
 		expect(p.trades[0].lot).toBe(8);
 	});
 
+	it('uses the current fee of the new side when an edit flips buy/sell', () => {
+		const p = new Portfolio(memoryStorage());
+		const base = { symbol: 'A', price: 1000, date: '2026-10-01' };
+		p.addTrade({ ...base, side: 'buy', lot: 10 });
+		p.addTrade({ ...base, side: 'buy', lot: 5 });
+		const id = p.trades[1].id;
+		p.updateTrade(id, { ...base, side: 'sell', lot: 5 });
+		expect(p.trades[1]).toMatchObject({ side: 'sell', fee: 0.25 });
+	});
+
 	it('migrates old positions into buy trades', () => {
 		const old = JSON.stringify({
 			positions: { 'BBRI.JK': { price: 3650, lot: 20 } },
