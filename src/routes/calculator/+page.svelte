@@ -4,32 +4,37 @@
 	import { sellScenarios } from '#lib/utils/position.ts';
 	import { fmt, groupInput, parseDigits, sgn } from '#lib/utils/number.ts';
 	import { load, save } from '#lib/utils/storage.ts';
+	import { Portfolio } from '#lib/stores/portfolio.svelte.ts';
 	import type { Fees } from '#lib/models/stock.ts';
 
 	const KEY = 'calculator';
 
-	let buy = $state(0);
-	let lot = $state(0);
-	let target = $state(0);
+	const FIELDS = [
+		['buy', 'Buy price / share'],
+		['lot', 'Lots (×100)'],
+		['target', 'Target sell price']
+	] as const;
+
+	let v = $state({ buy: 0, lot: 0, target: 0 });
 	let fees = $state<Fees>({ buy: 0.15, sell: 0.25 });
 	let ready = $state(false);
 
-	const result = $derived(buy > 0 && lot > 0 ? sellScenarios(buy, lot, target, fees) : undefined);
+	const result = $derived(
+		v.buy > 0 && v.lot > 0 ? sellScenarios(v.buy, v.lot, v.target, fees) : undefined
+	);
 	const rp = (n: number) => fmt.format(Math.round(Math.abs(n)));
 	const tone = (n: number) => (n > 0 ? 'up' : n < 0 ? 'down' : '');
 
 	onMount(() => {
 		// ponytail: local fees only; signed-in users with remote-only fees get defaults
-		const saved = load(localStorage, 'portfolio') as { fees?: Fees } | undefined;
-		if (saved?.fees) fees = saved.fees;
-		const last = load(localStorage, KEY) as
-			{ buy: number; lot: number; target: number } | undefined;
-		if (last) ({ buy, lot, target } = last);
+		fees = new Portfolio(localStorage).fees;
+		const last = load(localStorage, KEY) as typeof v | undefined;
+		if (last) v = last;
 		ready = true;
 	});
 
 	$effect(() => {
-		if (ready) save(localStorage, KEY, { buy, lot, target });
+		if (ready) save(localStorage, KEY, v);
 	});
 </script>
 
@@ -43,27 +48,15 @@
 
 	<section class="card">
 		<div class="inputs">
-			<label
-				>Buy price / share<input
-					inputmode="numeric"
-					value={buy ? fmt.format(buy) : ''}
-					oninput={(e) => (buy = parseDigits(groupInput(e.currentTarget)))}
-				/></label
-			>
-			<label
-				>Lots (×100)<input
-					inputmode="numeric"
-					value={lot ? fmt.format(lot) : ''}
-					oninput={(e) => (lot = parseDigits(groupInput(e.currentTarget)))}
-				/></label
-			>
-			<label
-				>Target sell price<input
-					inputmode="numeric"
-					value={target ? fmt.format(target) : ''}
-					oninput={(e) => (target = parseDigits(groupInput(e.currentTarget)))}
-				/></label
-			>
+			{#each FIELDS as [k, label] (k)}
+				<label
+					>{label}<input
+						inputmode="numeric"
+						value={v[k] ? fmt.format(v[k]) : ''}
+						oninput={(e) => (v[k] = parseDigits(groupInput(e.currentTarget)))}
+					/></label
+				>
+			{/each}
 		</div>
 		<div class="summary">
 			<span
@@ -91,8 +84,9 @@
 					{#each result.rows as r, i (i)}
 						<tr class={r.kind}>
 							<td class="mono"
-								>{fmt.format(r.price)}{#if r.kind === 'be'}<span class="tag">BE</span
-									>{:else if r.kind === 'target'}<span class="tag">target</span>{/if}</td
+								>{fmt.format(r.price)}{#if r.kind !== 'ladder'}<span class="tag"
+										>{r.kind === 'be' ? 'BE' : r.kind}</span
+									>{/if}</td
 							>
 							<td class="mono {tone(r.profit)}">{sgn(r.change)}{r.change.toFixed(1)}%</td>
 							<td class="mono gross">Rp {fmt.format(r.gross)}</td>

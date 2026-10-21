@@ -4,6 +4,7 @@ const SHARES_PER_LOT = 100;
 
 // IDX price fractions
 const tick = (p: number) => (p < 200 ? 1 : p < 500 ? 2 : p < 2000 ? 5 : p < 5000 ? 10 : 25);
+const roundTick = (p: number) => Math.round(p / tick(p)) * tick(p);
 
 /** round up to the next valid IDX price */
 export function ceilTick(p: number): number {
@@ -64,10 +65,7 @@ export function sellScenarios(buy: number, lot: number, target: number, fees: Fe
 			pct: (profit / cost) * 100
 		};
 	};
-	const rows = LADDER.map((p) => {
-		const raw = buy * (1 + p / 100);
-		return row(Math.round(raw / tick(raw)) * tick(raw), 'ladder');
-	});
+	const rows = LADDER.map((p) => row(roundTick(buy * (1 + p / 100)), 'ladder'));
 	rows.push(row(calcPosition({ lot, cost }, buy, fees.sell).bep, 'be'));
 	if (target > 0) rows.push(row(target, 'target'));
 	return { cost, rows: rows.sort((a, b) => b.price - a.price) };
